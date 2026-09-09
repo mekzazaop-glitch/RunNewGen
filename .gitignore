@@ -2,3 +2,4 @@ __pycache__/
 *.pyc
 07_web/uploads/*
 !07_web/uploads/.gitkeep
+.claude/
