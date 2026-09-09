@@ -1,0 +1,12 @@
+# วิดีโอ (ไฟล์ใหญ่ที่สุดในโปรเจกต์)
+*.mp4 filter=lfs diff=lfs merge=lfs -text
+*.MOV filter=lfs diff=lfs merge=lfs -text
+*.mov filter=lfs diff=lfs merge=lfs -text
+# รูปภาพ (เฟรมที่แตกไว้ตรวจสอบ + ภาพพรีเซนต์)
+*.jpg filter=lfs diff=lfs merge=lfs -text
+*.jpeg filter=lfs diff=lfs merge=lfs -text
+*.png filter=lfs diff=lfs merge=lfs -text
+# โมเดลและข้อมูลไบนารี
+*.joblib filter=lfs diff=lfs merge=lfs -text
+*.task filter=lfs diff=lfs merge=lfs -text
+*.parquet filter=lfs diff=lfs merge=lfs -text

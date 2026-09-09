@@ -1,0 +1,68 @@
+C:\Users\USER\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.12_qbz5n2kfra8p0\LocalCache\local-packages\Python312\site-packages\joblib\externals\loky\backend\context.py:136: UserWarning: Could not find the number of physical cores for the following reason:
+[WinError 2] The system cannot find the file specified
+Returning the number of logical cores instead. You can silence this warning by setting LOKY_MAX_CPU_COUNT to the number of cores you want to use.
+  warnings.warn(
+  File "C:\Users\USER\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.12_qbz5n2kfra8p0\LocalCache\local-packages\Python312\site-packages\joblib\externals\loky\backend\context.py", line 257, in _count_physical_cores
+    cpu_info = subprocess.run(
+               ^^^^^^^^^^^^^^^
+  File "C:\Program Files\WindowsApps\PythonSoftwareFoundation.Python.3.12_3.12.2800.0_x64__qbz5n2kfra8p0\Lib\subprocess.py", line 548, in run
+    with Popen(*popenargs, **kwargs) as process:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Program Files\WindowsApps\PythonSoftwareFoundation.Python.3.12_3.12.2800.0_x64__qbz5n2kfra8p0\Lib\subprocess.py", line 1026, in __init__
+    self._execute_child(args, executable, preexec_fn, close_fds,
+  File "C:\Program Files\WindowsApps\PythonSoftwareFoundation.Python.3.12_3.12.2800.0_x64__qbz5n2kfra8p0\Lib\subprocess.py", line 1538, in _execute_child
+    hp, ht, pid, tid = _winapi.CreateProcess(executable, args,
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+=== RandomForest ===
+  threshold=0.56  เวลาเทรน=7.5s
+              precision    recall  f1-score   support
+
+           0       0.92      0.73      0.81       948
+           1       0.62      0.87      0.72       482
+
+    accuracy                           0.78      1430
+   macro avg       0.77      0.80      0.77      1430
+weighted avg       0.82      0.78      0.78      1430
+
+
+=== GradientBoosting ===
+  threshold=0.38  เวลาเทรน=15.6s
+              precision    recall  f1-score   support
+
+           0       0.91      0.77      0.83       948
+           1       0.65      0.84      0.73       482
+
+    accuracy                           0.79      1430
+   macro avg       0.78      0.81      0.78      1430
+weighted avg       0.82      0.79      0.80      1430
+
+
+=== MLP Neural Network ===
+  threshold=0.36  เวลาเทรน=3.5s
+              precision    recall  f1-score   support
+
+           0       0.89      0.79      0.84       948
+           1       0.66      0.81      0.73       482
+
+    accuracy                           0.80      1430
+   macro avg       0.78      0.80      0.79      1430
+weighted avg       0.82      0.80      0.80      1430
+
+
+
+=== กำลังรัน LOSO CV (21 fold) ทั้ง 3 โมเดล — ใช้เวลาสักครู่ ===
+พลิกทิศทาง (mirror แกน x) ให้คลิป: ['Tyes']
+โหลด 6952 เฟรม, ทิ้ง 4 เฟรมที่ตรวจไม่เจอคน, ทิ้งเพิ่ม 0 เฟรมที่ scale=0 เหลือ 6948 เฟรม
+RandomForest: LOSO macro-F1 = 0.641 ± 0.139 (59s)
+GradientBoosting: LOSO macro-F1 = 0.704 ± 0.129 (123s)
+MLP Neural Network: LOSO macro-F1 = 0.702 ± 0.136 (35s)
+
+
+=== ตารางสรุปเปรียบเทียบ ===
+              name  test_accuracy  test_precision_0  test_recall_0  test_f1_0  test_precision_1  test_recall_1  test_f1_1  test_macro_f1  loso_macro_f1_mean  loso_macro_f1_std  train_time_sec
+      RandomForest       0.775524          0.917443       0.726793   0.811065          0.618557       0.871369   0.723514       0.767290            0.640515           0.139139        7.529331
+  GradientBoosting       0.793007          0.905473       0.767932   0.831050          0.648562       0.842324   0.732852       0.781951            0.704202           0.129146       15.557361
+MLP Neural Network       0.798601          0.892857       0.791139   0.838926          0.664407       0.813278   0.731343       0.785135            0.702371           0.136288        3.504474
+
+บันทึก model_comparison.csv

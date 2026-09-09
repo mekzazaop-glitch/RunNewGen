@@ -1,0 +1,23 @@
+พบวิดีโอทั้งหมด 21 ไฟล์ (ทั้ง Student + Prototype) เป้าหมาย 960x720
+
+Fatom: 1831/1831 เฟรม @ 60.0fps ใช้เวลา 19.9s -> VDO 960x720\Fatom.mp4
+Fbank: 2545/2545 เฟรม @ 60.0fps ใช้เวลา 152.8s -> VDO 960x720\Fbank.mp4
+Fdang: 1906/1906 เฟรม @ 60.0fps ใช้เวลา 81.7s -> VDO 960x720\Fdang.mp4
+Fkhing: 1883/1883 เฟรม @ 60.0fps ใช้เวลา 84.5s -> VDO 960x720\Fkhing.mp4
+Fkorn: 1893/1893 เฟรม @ 60.0fps ใช้เวลา 77.9s -> VDO 960x720\Fkorn.mp4
+Fmek: 3033/3033 เฟรม @ 60.0fps ใช้เวลา 127.7s -> VDO 960x720\Fmek.mp4
+Fnew: 2131/2131 เฟรม @ 60.0fps ใช้เวลา 96.1s -> VDO 960x720\Fnew.mp4
+Fnot: 1874/1874 เฟรม @ 60.0fps ใช้เวลา 79.0s -> VDO 960x720\Fnot.mp4
+Ftime: 1847/1847 เฟรม @ 60.0fps ใช้เวลา 18.0s -> VDO 960x720\Ftime.mp4
+Fweir: 2250/2250 เฟรม @ 60.0fps ใช้เวลา 92.6s -> VDO 960x720\Fweir.mp4
+Tatom: 1838/1838 เฟรม @ 60.0fps ใช้เวลา 17.6s -> VDO 960x720\Tatom.mp4
+Tbank: 1840/1840 เฟรม @ 60.0fps ใช้เวลา 77.0s -> VDO 960x720\Tbank.mp4
+Tdang: 1851/1851 เฟรม @ 60.0fps ใช้เวลา 74.6s -> VDO 960x720\Tdang.mp4
+Tkhing: 1841/1841 เฟรม @ 60.0fps ใช้เวลา 17.2s -> VDO 960x720\Tkhing.mp4
+Tkorn: 1836/1836 เฟรม @ 60.0fps ใช้เวลา 74.6s -> VDO 960x720\Tkorn.mp4
+Tmek: 1871/1871 เฟรม @ 60.0fps ใช้เวลา 82.1s -> VDO 960x720\Tmek.mp4
+Tnew: 1872/1872 เฟรม @ 60.0fps ใช้เวลา 80.7s -> VDO 960x720\Tnew.mp4
+Tnot: 1854/1854 เฟรม @ 60.0fps ใช้เวลา 76.9s -> VDO 960x720\Tnot.mp4
+Ttime: 1884/1884 เฟรม @ 60.0fps ใช้เวลา 17.6s -> VDO 960x720\Ttime.mp4
+Tweir: 1871/1871 เฟรม @ 60.0fps ใช้เวลา 75.6s -> VDO 960x720\Tweir.mp4
+Tyes: 959/963 เฟรม @ 30.0fps ใช้เวลา 3.0s -> VDO 960x720\Tyes.mp4

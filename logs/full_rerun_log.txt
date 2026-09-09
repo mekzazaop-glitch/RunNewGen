@@ -1,0 +1,43 @@
+=== [00] resize videos ===
+พบวิดีโอทั้งหมด 22 ไฟล์ (ทั้ง Student + Prototype) เป้าหมาย 960x720
+
+Fatom: มีไฟล์ผลลัพธ์อยู่แล้ว (ข้าม)
+Fbank: มีไฟล์ผลลัพธ์อยู่แล้ว (ข้าม)
+Fdang: มีไฟล์ผลลัพธ์อยู่แล้ว (ข้าม)
+Fkhing: มีไฟล์ผลลัพธ์อยู่แล้ว (ข้าม)
+Fkorn: มีไฟล์ผลลัพธ์อยู่แล้ว (ข้าม)
+Fmek: มีไฟล์ผลลัพธ์อยู่แล้ว (ข้าม)
+Fnew: มีไฟล์ผลลัพธ์อยู่แล้ว (ข้าม)
+Fnot: มีไฟล์ผลลัพธ์อยู่แล้ว (ข้าม)
+Ftime: มีไฟล์ผลลัพธ์อยู่แล้ว (ข้าม)
+Fweir: มีไฟล์ผลลัพธ์อยู่แล้ว (ข้าม)
+Tatom: มีไฟล์ผลลัพธ์อยู่แล้ว (ข้าม)
+Tbank: มีไฟล์ผลลัพธ์อยู่แล้ว (ข้าม)
+Tdang: มีไฟล์ผลลัพธ์อยู่แล้ว (ข้าม)
+Tkhing: มีไฟล์ผลลัพธ์อยู่แล้ว (ข้าม)
+Tkorn: มีไฟล์ผลลัพธ์อยู่แล้ว (ข้าม)
+Tmek: มีไฟล์ผลลัพธ์อยู่แล้ว (ข้าม)
+Tnew: มีไฟล์ผลลัพธ์อยู่แล้ว (ข้าม)
+Tnot: มีไฟล์ผลลัพธ์อยู่แล้ว (ข้าม)
+Ttime: มีไฟล์ผลลัพธ์อยู่แล้ว (ข้าม)
+Tweir: มีไฟล์ผลลัพธ์อยู่แล้ว (ข้าม)
+Running Analysis: มีไฟล์ผลลัพธ์อยู่แล้ว (ข้าม)
+Tyes: มีไฟล์ผลลัพธ์อยู่แล้ว (ข้าม)
+
+=== [01] extract landmarks ===
+INFO: Created TensorFlow Lite XNNPACK delegate for CPU.
+WARNING: Logging before InitGoogle() is written to STDERR
+W0000 00:00:1788934781.861232   41276 inference_feedback_manager.cc:121] Feedback manager requires a model with a single signature inference. Disabling support for feedback tensors.
+W0000 00:00:1788934781.895522   36140 inference_feedback_manager.cc:121] Feedback manager requires a model with a single signature inference. Disabling support for feedback tensors.
+W0000 00:00:1788934781.968613   41420 landmark_projection_calculator.cc:81] Using NORM_RECT without IMAGE_DIMENSIONS is only supported for the square ROI. Provide IMAGE_DIMENSIONS or use PROJECTION_MATRIX.
+W0000 00:00:1788934781.968613    6204 landmark_projection_calculator.cc:81] Using NORM_RECT without IMAGE_DIMENSIONS is only supported for the square ROI. Provide IMAGE_DIMENSIONS or use PROJECTION_MATRIX.
+W0000 00:00:1788934813.571520   20172 inference_feedback_manager.cc:121] Feedback manager requires a model with a single signature inference. Disabling support for feedback tensors.
+W0000 00:00:1788934813.638439   20172 inference_feedback_manager.cc:121] Feedback manager requires a model with a single signature inference. Disabling support for feedback tensors.
+W0000 00:00:1788934862.411417   43996 inference_feedback_manager.cc:121] Feedback manager requires a model with a single signature inference. Disabling support for feedback tensors.
+W0000 00:00:1788934862.445411   43996 inference_feedback_manager.cc:121] Feedback manager requires a model with a single signature inference. Disabling support for feedback tensors.
+W0000 00:00:1788934881.993036   41420 inference_feedback_manager.cc:121] Feedback manager requires a model with a single signature inference. Disabling support for feedback tensors.
+W0000 00:00:1788934882.027792   12968 inference_feedback_manager.cc:121] Feedback manager requires a model with a single signature inference. Disabling support for feedback tensors.
+W0000 00:00:1788934897.131991   32216 inference_feedback_manager.cc:121] Feedback manager requires a model with a single signature inference. Disabling support for feedback tensors.
+W0000 00:00:1788934897.167687   21684 inference_feedback_manager.cc:121] Feedback manager requires a model with a single signature inference. Disabling support for feedback tensors.
+W0000 00:00:1788934912.561551    7460 inference_feedback_manager.cc:121] Feedback manager requires a model with a single signature inference. Disabling support for feedback tensors.
+W0000 00:00:1788934912.597737   19540 inference_feedback_manager.cc:121] Feedback manager requires a model with a single signature inference. Disabling support for feedback tensors.
