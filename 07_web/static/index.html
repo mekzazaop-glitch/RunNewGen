@@ -506,14 +506,33 @@ function reveal(el, delay){
   setTimeout(function(){ el.classList.add('in'); }, delay);
 }
 function countTo(el, target, ms){
-  if(reduced){ el.textContent = Math.round(target); return; }
+  var finalVal = Math.round(target);
+  if(reduced){ el.textContent = finalVal; return; }
+
+  /* บั๊กที่เจอ: requestAnimationFrame หยุดทำงานถ้าแท็บถูกสลับออกไป (เช่น สลับไปแอปอื่นพอดี
+     ตอนผลวิเคราะห์ออก) ทำให้เลขค้างอยู่ที่ค่าเริ่มต้น "0" จนกว่าจะกลับมาโฟกัสแท็บอีกครั้ง — ดู
+     เหมือนระบบคะแนนพัง ทั้งที่ผลลัพธ์จริงถูกต้องอยู่แล้ว (แค่ยังไม่ได้วาดใหม่)
+     แก้ด้วย setTimeout เป็นตาข่ายรองรับ: setTimeout ยังทำงานในแท็บพื้นหลังได้ (แค่ถูกหน่วงเวลา
+     ไม่ถูกหยุดสนิทเหมือน rAF) จึงรับประกันว่าเลขจะถูกต้องภายในเวลาไม่เกิน ms เสมอ ไม่ว่าแท็บจะ
+     โฟกัสอยู่หรือไม่ */
+  var done = false;
+  function finish(){
+    if(done) return;
+    done = true;
+    el.textContent = finalVal;
+  }
+
   var t0 = performance.now();
   (function step(now){
+    if(done) return;
     var k = Math.min(1, (now - t0) / ms);
     var e = 1 - Math.pow(1 - k, 3);
     el.textContent = Math.round(target * e);
     if(k < 1) requestAnimationFrame(step);
+    else finish();
   })(t0);
+
+  setTimeout(finish, ms + 150);
 }
 
 function render(d){
