@@ -404,6 +404,9 @@ var $ = function(id){ return document.getElementById(id); };
 
 /* ---------------- theme ---------------- */
 var root = document.documentElement;
+/* ผู้ใช้ตั้งค่าลดการเคลื่อนไหวไว้ไหม — countTo() ใช้ตัวนี้ ต้องประกาศไว้บนสุดก่อนโค้ดส่วนอื่นอ้างถึง
+   (เคยไม่ได้ประกาศเลย ทำให้ countTo() โยน ReferenceError ตอนแสดงผล จนรายละเอียดมุม/คำแนะนำไม่ขึ้น) */
+var reduced = !!(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches);
 function setTheme(t){
   root.setAttribute('data-theme', t);
   $('thDark').setAttribute('aria-pressed', String(t === 'dark'));
@@ -541,7 +544,10 @@ try{
   new MutationObserver(syncTheme).observe(root, {attributes:true, attributeFilter:['data-theme']});
 
   var t = 0, acc = 0, last = performance.now();
-  var reducedMotion = reduced;
+  /* อ่านค่าเองตรงนี้ ห้ามอ้างตัวแปร `reduced` ของสคริปต์ส่วนล่าง — ตัวนั้นประกาศทีหลังโค้ดนี้
+     จึงยังไม่มีตอนโค้ดนี้รัน ทำให้เกิด ReferenceError ถูก catch ข้างล่างเงียบๆ แล้วฉาก 3D ว่างเปล่า
+     (เจอจริงบนเว็บที่ deploy แล้ว: เห็นแค่ตาราง ไม่มีโครงร่างนักวิ่ง) */
+  var reducedMotion = !!(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches);
 
   function loop(now){
     var dt = now - last; last = now;
