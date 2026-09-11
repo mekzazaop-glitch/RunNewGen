@@ -1,0 +1,36 @@
+# จำกัดขนาด build context ตอน deploy (railway up / docker build) ให้เหลือเฉพาะไฟล์ที่ Dockerfile ใช้จริง
+# ถ้าไม่มีไฟล์นี้ จะอัปโหลดคลิปวิดีโอทั้งหมดในโฟลเดอร์ data/ (หลาย GB) ขึ้นไปด้วยโดยไม่จำเป็น
+
+# วิดีโอต้นฉบับและคลิปทดสอบ — backend ไม่ได้ใช้ตอนรัน (ใช้เฉพาะตอนเทรน)
+data/
+_test_clips/
+_archive/
+*.mp4
+*.MOV
+*.mov
+
+# ผลลัพธ์/ล็อกจากขั้นตอนเทรน — ไม่เกี่ยวกับการรันเว็บ
+logs/
+framework_images/
+*.parquet
+landmarks_raw.csv
+multi_person_debug.csv
+splits.json
+
+# สคริปต์ขั้นตอนเทรน/ทดลอง ที่ backend ไม่ได้ import
+03_train_model.py
+04_evaluate_model.py
+05_*.py
+06_*.py
+07_ensemble_loso.py
+make_*.py
+
+# โฟลเดอร์ deploy/frontend แยก และไฟล์ชั่วคราว
+hf-space-backend/
+web-frontend/
+web-frontend-vercel.zip
+07_web/uploads/*
+__pycache__/
+*.pyc
+.git/
+.claude/

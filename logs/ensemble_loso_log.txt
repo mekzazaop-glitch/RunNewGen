@@ -1,0 +1,50 @@
+C:\Users\USER\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.12_qbz5n2kfra8p0\LocalCache\local-packages\Python312\site-packages\joblib\externals\loky\backend\context.py:136: UserWarning: Could not find the number of physical cores for the following reason:
+[WinError 2] The system cannot find the file specified
+Returning the number of logical cores instead. You can silence this warning by setting LOKY_MAX_CPU_COUNT to the number of cores you want to use.
+  warnings.warn(
+  File "C:\Users\USER\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.12_qbz5n2kfra8p0\LocalCache\local-packages\Python312\site-packages\joblib\externals\loky\backend\context.py", line 257, in _count_physical_cores
+    cpu_info = subprocess.run(
+               ^^^^^^^^^^^^^^^
+  File "C:\Program Files\WindowsApps\PythonSoftwareFoundation.Python.3.12_3.12.2800.0_x64__qbz5n2kfra8p0\Lib\subprocess.py", line 548, in run
+    with Popen(*popenargs, **kwargs) as process:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Program Files\WindowsApps\PythonSoftwareFoundation.Python.3.12_3.12.2800.0_x64__qbz5n2kfra8p0\Lib\subprocess.py", line 1026, in __init__
+    self._execute_child(args, executable, preexec_fn, close_fds,
+  File "C:\Program Files\WindowsApps\PythonSoftwareFoundation.Python.3.12_3.12.2800.0_x64__qbz5n2kfra8p0\Lib\subprocess.py", line 1538, in _execute_child
+    hp, ht, pid, tid = _winapi.CreateProcess(executable, args,
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+โหลดข้อมูลทั้งหมด (train+val+test รวมกัน) สำหรับ LOSO...
+พลิกทิศทาง (mirror แกน x) ให้คลิป: ['Tyes']
+โหลด 7012 เฟรม, ทิ้ง 4 เฟรมที่ตรวจไม่เจอคน, ทิ้งเพิ่ม 234 เฟรมที่มั่นใจต่ำกว่า 0.5 (<0.5 ในจุดใดจุดหนึ่ง), ทิ้งเพิ่ม 0 เฟรมที่ scale=0 เหลือ 6774 เฟรม
+
+=== Ensemble LOSO CV (22 fold) — RF เทียบ ensemble ด้วย threshold สมดุลทั้งคู่ ===
+  fold  1/22 ('Fmek'): RF=0.713 (th=0.58)  Ensemble=0.683 (th=0.44)  (แย่ลง) [69s]
+  fold  2/22 ('Fbank'): RF=0.784 (th=0.56)  Ensemble=0.796 (th=0.46)  (ดีขึ้น) [39s]
+  fold  3/22 ('Fweir'): RF=0.781 (th=0.60)  Ensemble=0.794 (th=0.48)  (ดีขึ้น) [38s]
+  fold  4/22 ('Fnew'): RF=0.707 (th=0.58)  Ensemble=0.681 (th=0.46)  (แย่ลง) [38s]
+  fold  5/22 ('Fdang'): RF=0.718 (th=0.58)  Ensemble=0.729 (th=0.48)  (ดีขึ้น) [38s]
+  fold  6/22 ('Fkorn'): RF=0.515 (th=0.60)  Ensemble=0.520 (th=0.50)  (ดีขึ้น) [40s]
+  fold  7/22 ('Ttime'): RF=0.792 (th=0.58)  Ensemble=0.799 (th=0.48)  (ดีขึ้น) [39s]
+  fold  8/22 ('Tnew'): RF=0.759 (th=0.60)  Ensemble=0.731 (th=0.50)  (แย่ลง) [39s]
+  fold  9/22 ('Tmek'): RF=0.817 (th=0.62)  Ensemble=0.812 (th=0.50)  (แย่ลง) [38s]
+  fold 10/22 ('Fnot'): RF=0.722 (th=0.62)  Ensemble=0.751 (th=0.52)  (ดีขึ้น) [38s]
+  fold 11/22 ('Tdang'): RF=0.784 (th=0.62)  Ensemble=0.812 (th=0.52)  (ดีขึ้น) [39s]
+  fold 12/22 ('Tatom'): RF=0.654 (th=0.60)  Ensemble=0.639 (th=0.50)  (แย่ลง) [42s]
+  fold 13/22 ('Tweir'): RF=0.828 (th=0.62)  Ensemble=0.824 (th=0.52)  (แย่ลง) [75s]
+  fold 14/22 ('Tnot'): RF=0.708 (th=0.62)  Ensemble=0.701 (th=0.50)  (แย่ลง) [76s]
+  fold 15/22 ('Ftime'): RF=0.782 (th=0.60)  Ensemble=0.778 (th=0.50)  (แย่ลง) [78s]
+  fold 16/22 ('Tkorn'): RF=0.503 (th=0.62)  Ensemble=0.528 (th=0.52)  (ดีขึ้น) [75s]
+  fold 17/22 ('Tbank'): RF=0.875 (th=0.58)  Ensemble=0.865 (th=0.46)  (แย่ลง) [76s]
+  fold 18/22 ('Fkhing'): RF=0.714 (th=0.62)  Ensemble=0.710 (th=0.50)  (แย่ลง) [74s]
+  fold 19/22 ('Tkhing'): RF=0.613 (th=0.58)  Ensemble=0.610 (th=0.48)  (แย่ลง) [73s]
+  fold 20/22 ('Fatom'): RF=0.671 (th=0.58)  Ensemble=0.670 (th=0.46)  (แย่ลง) [74s]
+  fold 21/22 ('Tyes'): RF=0.320 (th=0.58)  Ensemble=0.382 (th=0.46)  (ดีขึ้น) [75s]
+  fold 22/22 ('Running Analysis'): RF=0.298 (th=0.58)  Ensemble=0.372 (th=0.46)  (ดีขึ้น) [75s]
+
+=== สรุป (รวมเวลา 1249s) ===
+  RF เดี่ยว (threshold สมดุลต่อ fold):      0.684 ± 0.149
+  Ensemble (threshold สมดุลต่อ fold):      0.690 ± 0.133
+  Ensemble ดีขึ้น 10 fold, แย่ลง 12 fold, เท่าเดิม 0 fold (จาก 22)
+
+=== ตัดสินใจ ===
+  ต่างกันเล็กน้อย (+0.006) อยู่ในช่วง noise -> ไม่คุ้มเพิ่มความซับซ้อน เก็บ RF เดี่ยวไว้

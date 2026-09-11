@@ -406,7 +406,7 @@ var $ = function(id){ return document.getElementById(id); };
    หน้านี้ deploy แยกจาก backend (frontend อยู่บน Vercel, backend อยู่คนละที่ เช่น Render)
    จึงต้อง fetch แบบ absolute URL ไม่ใช่ path เดียวกัน (/api/...) เหมือนตอนรันรวมกันที่ localhost
    ⚠️ แก้บรรทัดนี้เป็น URL จริงของ backend หลัง deploy เสร็จแล้ว (ดู DEPLOY.md) */
-var API_BASE = 'https://YOUR-BACKEND.onrender.com';
+var API_BASE = 'https://runnewgen-web-production.up.railway.app';
 
 /* ---------------- theme ---------------- */
 var root = document.documentElement;

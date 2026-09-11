@@ -3,3 +3,9 @@ __pycache__/
 07_web/uploads/*
 !07_web/uploads/.gitkeep
 .claude/
+
+# โฟลเดอร์/ไฟล์ที่สร้างขึ้นมาชั่วคราวตอน deploy — เป็นสำเนาของไฟล์ที่มีอยู่แล้วในรากโปรเจกต์
+# (พิสูจน์แล้วว่า deploy จากรากโปรเจกต์ตรงๆ ได้ image เดียวกันเป๊ะ จึงไม่ต้องเก็บสำเนาซ้ำใน repo)
+hf-space-backend/
+web-frontend-vercel.zip
+.railway/

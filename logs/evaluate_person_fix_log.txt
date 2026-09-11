@@ -1,0 +1,109 @@
+โมเดล: RandomForest (balanced recall), 17 ฟีเจอร์, คลาส [0, 1], decision_threshold=0.48
+
+--- Train (ระดับเฟรม, 5602 เฟรม, threshold=0.48) ---
+  accuracy=0.810, macro-F1=0.801
+              precision    recall  f1-score   support
+
+           0       0.89      0.80      0.84      3597
+           1       0.70      0.83      0.76      2005
+
+    accuracy                           0.81      5602
+   macro avg       0.80      0.81      0.80      5602
+weighted avg       0.82      0.81      0.81      5602
+
+  confusion matrix (labels=[np.int64(0), np.int64(1)]):
+    [[2871  726]
+ [ 338 1667]]
+
+--- Train (ระดับคลิป, 18 คลิป) ---
+  ✓ Fatom: จริง=1 ทาย=1 (มั่นใจ 51.5%)
+  ✗ Fbank: จริง=1 ทาย=0 (มั่นใจ 54.4%)
+  ✓ Fdang: จริง=0 ทาย=0 (มั่นใจ 54.3%)
+  ✓ Fkhing: จริง=0 ทาย=0 (มั่นใจ 63.4%)
+  ✓ Fkorn: จริง=0 ทาย=0 (มั่นใจ 61.8%)
+  ✓ Fnew: จริง=0 ทาย=0 (มั่นใจ 63.9%)
+  ✗ Fnot: จริง=0 ทาย=1 (มั่นใจ 50.7%)
+  ✗ Ftime: จริง=1 ทาย=0 (มั่นใจ 56.0%)
+  ✗ Fweir: จริง=1 ทาย=0 (มั่นใจ 56.4%)
+  ✓ Tatom: จริง=0 ทาย=0 (มั่นใจ 55.3%)
+  ✓ Tkhing: จริง=1 ทาย=1 (มั่นใจ 59.9%)
+  ✓ Tkorn: จริง=0 ทาย=0 (มั่นใจ 72.7%)
+  ✓ Tmek: จริง=0 ทาย=0 (มั่นใจ 53.2%)
+  ✓ Tnew: จริง=1 ทาย=1 (มั่นใจ 55.1%)
+  ✓ Tnot: จริง=1 ทาย=1 (มั่นใจ 55.8%)
+  ✓ Ttime: จริง=0 ทาย=0 (มั่นใจ 61.4%)
+  ✓ Tweir: จริง=0 ทาย=0 (มั่นใจ 55.1%)
+  ✓ Tyes: จริง=1 ทาย=1 (มั่นใจ 82.1%)
+  accuracy=0.778, macro-F1=0.766
+
+--- Test (ระดับเฟรม, 1172 เฟรม, threshold=0.48) ---
+  accuracy=0.783, macro-F1=0.768
+              precision    recall  f1-score   support
+
+           0       0.88      0.78      0.83       782
+           1       0.64      0.79      0.71       390
+
+    accuracy                           0.78      1172
+   macro avg       0.76      0.79      0.77      1172
+weighted avg       0.80      0.78      0.79      1172
+
+  confusion matrix (labels=[np.int64(0), np.int64(1)]):
+    [[608 174]
+ [ 80 310]]
+
+--- Test (ระดับคลิป, 4 คลิป) ---
+  ✓ Fmek: จริง=0 ทาย=0 (มั่นใจ 60.6%)
+  ✗ Running Analysis: จริง=1 ทาย=0 (มั่นใจ 55.7%)
+  ✓ Tbank: จริง=1 ทาย=1 (มั่นใจ 51.9%)
+  ✗ Tdang: จริง=1 ทาย=0 (มั่นใจ 53.1%)
+  accuracy=0.500, macro-F1=0.500
+
+=== ตรวจ overfit: ช่องว่าง accuracy Train-Test = +0.027 ===
+  อยู่ในเกณฑ์ที่รับได้ (< 0.15)
+
+=== Permutation Importance (วัดจากชุด Test) ===
+  shoulder_y_norm        +0.0358 (+/- 0.0068)
+  shoulder_x_norm        +0.0276 (+/- 0.0056)
+  trunk_lean             +0.0259 (+/- 0.0058)
+  knee_angle             +0.0185 (+/- 0.0061)
+  ankle_y_norm           +0.0163 (+/- 0.0039)
+  heel_y_norm            +0.0127 (+/- 0.0035)
+  foot_index_y_norm      +0.0116 (+/- 0.0035)
+  hip_angle              +0.0038 (+/- 0.0030)
+  foot_angle             +0.0025 (+/- 0.0040)
+  ankle_x_norm           +0.0006 (+/- 0.0013)
+  ankle_angle            +0.0001 (+/- 0.0022)
+  thigh_angle            +0.0001 (+/- 0.0016)
+  heel_x_norm            -0.0002 (+/- 0.0020)
+  foot_index_x_norm      -0.0004 (+/- 0.0023)
+  knee_x_norm            -0.0035 (+/- 0.0029)
+  shank_angle            -0.0043 (+/- 0.0042)
+  knee_y_norm            -0.0095 (+/- 0.0027)
+พลิกทิศทาง (mirror แกน x) ให้คลิป: ['Tyes']
+โหลด 7012 เฟรม, ทิ้ง 4 เฟรมที่ตรวจไม่เจอคน, ทิ้งเพิ่ม 234 เฟรมที่มั่นใจต่ำกว่า 0.5 (<0.5 ในจุดใดจุดหนึ่ง), ทิ้งเพิ่ม 0 เฟรมที่ scale=0 เหลือ 6774 เฟรม
+
+=== Leave-One-Subject-Out CV (22 fold, รวม train+val+test, ระดับเฟรม) ===
+  fold 1 (ทดสอบกับคน 'Fmek'): accuracy=0.905, macro-F1=0.808
+  fold 2 (ทดสอบกับคน 'Fbank'): accuracy=0.761, macro-F1=0.760
+  fold 3 (ทดสอบกับคน 'Fweir'): accuracy=0.895, macro-F1=0.875
+  fold 4 (ทดสอบกับคน 'Fnew'): accuracy=0.698, macro-F1=0.668
+  fold 5 (ทดสอบกับคน 'Fdang'): accuracy=0.774, macro-F1=0.725
+  fold 6 (ทดสอบกับคน 'Fkorn'): accuracy=0.738, macro-F1=0.630
+  fold 7 (ทดสอบกับคน 'Ttime'): accuracy=0.782, macro-F1=0.738
+  fold 8 (ทดสอบกับคน 'Tnew'): accuracy=0.708, macro-F1=0.704
+  fold 9 (ทดสอบกับคน 'Tmek'): accuracy=0.840, macro-F1=0.824
+  fold 10 (ทดสอบกับคน 'Fnot'): accuracy=0.843, macro-F1=0.809
+  fold 11 (ทดสอบกับคน 'Tdang'): accuracy=0.803, macro-F1=0.774
+  fold 12 (ทดสอบกับคน 'Tatom'): accuracy=0.645, macro-F1=0.623
+  fold 13 (ทดสอบกับคน 'Tweir'): accuracy=0.879, macro-F1=0.851
+  fold 14 (ทดสอบกับคน 'Tnot'): accuracy=0.767, macro-F1=0.766
+  fold 15 (ทดสอบกับคน 'Ftime'): accuracy=0.766, macro-F1=0.758
+  fold 16 (ทดสอบกับคน 'Tkorn'): accuracy=0.838, macro-F1=0.578
+  fold 17 (ทดสอบกับคน 'Tbank'): accuracy=0.819, macro-F1=0.817
+  fold 18 (ทดสอบกับคน 'Fkhing'): accuracy=0.812, macro-F1=0.759
+  fold 19 (ทดสอบกับคน 'Tkhing'): accuracy=0.673, macro-F1=0.668
+  fold 20 (ทดสอบกับคน 'Fatom'): accuracy=0.699, macro-F1=0.680
+  fold 21 (ทดสอบกับคน 'Tyes'): accuracy=0.713, macro-F1=0.416
+  fold 22 (ทดสอบกับคน 'Running Analysis'): accuracy=0.424, macro-F1=0.298
+
+  LOSO macro-F1 เฉลี่ย: 0.706 (+/- 0.135)
