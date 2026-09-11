@@ -34,6 +34,13 @@ JOBS_LOCK = threading.Lock()
 
 MAX_UPLOAD_MB = inference.MAX_FILE_SIZE_MB
 
+# จำกัดจำนวนคลิปที่วิเคราะห์พร้อมกัน — ห้ามปล่อยให้ทุก upload เปิด thread วิเคราะห์ของตัวเองทันที
+# แต่ละงานสร้าง MediaPipe detector + ตัวถอดรหัสวิดีโอของตัวเอง ใช้แรมสูงสุด ~660MB ต่อคลิป 4K
+# เซิร์ฟเวอร์ Railway มีเพดาน 1GB — log จริงเห็น POST /api/analyze 2 ครั้งติดกันแล้วตามด้วย "Killed"
+# (สองงานพร้อมกัน ~1.3GB) งานที่ส่งมาทีหลังจึงต้องรอคิวแทน ปรับได้ผ่าน env var ถ้าย้ายไปเครื่องแรมเยอะ
+MAX_CONCURRENT_JOBS = int(os.environ.get("MAX_CONCURRENT_JOBS", "1"))
+_ANALYZE_SLOTS = threading.Semaphore(MAX_CONCURRENT_JOBS)
+
 
 def _process_job(job_id, video_path):
     def progress_cb(pct, stage):
@@ -42,7 +49,13 @@ def _process_job(job_id, video_path):
             JOBS[job_id]["stage"] = stage
 
     try:
-        result = inference.analyze_video(video_path, progress_cb=progress_cb)
+        if not _ANALYZE_SLOTS.acquire(blocking=False):
+            progress_cb(0, "รอคิว — มีคลิปอื่นกำลังวิเคราะห์อยู่ จะเริ่มให้อัตโนมัติเมื่อคิวว่าง")
+            _ANALYZE_SLOTS.acquire()
+        try:
+            result = inference.analyze_video(video_path, progress_cb=progress_cb)
+        finally:
+            _ANALYZE_SLOTS.release()
         with JOBS_LOCK:
             JOBS[job_id]["status"] = "done"
             JOBS[job_id]["result"] = result

@@ -593,7 +593,41 @@ function setProgress(p){
   $('pct').textContent = Math.round(p) + '%';
 }
 
-/* ---------------- upload ---------------- */
+/* ---------------- upload ----------------
+   ใช้ XMLHttpRequest ไม่ใช่ fetch() เพราะ fetch ไม่มี event บอกความคืบหน้า "ขาส่งขึ้น" เลย
+   คลิปจริงใหญ่ได้ถึง ~200-300MB ซึ่งบนเน็ตบ้านใช้เวลาส่งหลายนาที ถ้าใช้ fetch แถบจะค้างที่ 0%
+   ตลอดช่วงนั้นจนผู้ใช้เข้าใจว่าเว็บค้าง/พัง (เคยเกิดขึ้นจริงตอนทดสอบไฟล์ 196MB) */
+function uploadWithProgress(url, form){
+  return new Promise(function(resolve, reject){
+    var xhr = new XMLHttpRequest();
+    xhr.open('POST', url);
+
+    xhr.upload.onprogress = function(e){
+      if(!e.lengthComputable) return;
+      var pct = e.loaded / e.total * 100;
+      /* กันแถบกระโดดถึง 100% ตั้งแต่ยังไม่เริ่มวิเคราะห์ — ให้ช่วงอัปโหลดกินแค่ 0-40% ของแถบ
+         ที่เหลือเป็นของขั้นตอนประมวลผลจริงซึ่ง server เป็นคนรายงานผ่าน /api/status */
+      setProgress(pct * 0.4);
+      $('stage').textContent = pct < 100
+        ? 'กำลังอัปโหลด… ' + (e.loaded / 1048576).toFixed(0) + '/' + (e.total / 1048576).toFixed(0) + ' MB'
+        : 'อัปโหลดครบแล้ว กำลังรอเซิร์ฟเวอร์รับงาน…';
+    };
+
+    xhr.onload = function(){
+      var j = null;
+      try { j = JSON.parse(xhr.responseText); } catch(e){}
+      if(xhr.status >= 200 && xhr.status < 300 && j && j.job_id) resolve(j);
+      else reject(new Error((j && j.detail) || ('อัปโหลดล้มเหลว (HTTP ' + xhr.status + ')')));
+    };
+    xhr.onerror = function(){
+      reject(new Error('ส่งไฟล์ไม่สำเร็จ — เน็ตหลุดกลางทาง หรือไฟล์ใหญ่เกินที่เซิร์ฟเวอร์รับไหว'));
+    };
+    xhr.ontimeout = function(){ reject(new Error('ส่งไฟล์นานเกินกำหนด')); };
+
+    xhr.send(form);
+  });
+}
+
 var drop = $('drop'), fileInput = $('fileInput'), go = $('go'), file = null;
 
 drop.addEventListener('click', function(){ fileInput.click(); });
@@ -636,12 +670,7 @@ go.addEventListener('click', function(){
 
   var form = new FormData();
   form.append('file', file);
-  fetch('/api/analyze', { method:'POST', body:form })
-    .then(function(res){
-      if(!res.ok) return res.json().catch(function(){ return {detail:'อัปโหลดล้มเหลว'}; })
-                     .then(function(j){ throw new Error(j.detail || 'อัปโหลดล้มเหลว'); });
-      return res.json();
-    })
+  uploadWithProgress('/api/analyze', form)
     .then(function(j){ return poll(j.job_id); })
     .catch(function(e){
       showError(e.message);
@@ -663,7 +692,8 @@ function poll(jobId){
     if(!res.ok) throw new Error('เช็คสถานะไม่ได้ (job หมดอายุหรือเซิร์ฟเวอร์รีสตาร์ท)');
     return res.json();
   }).then(function(s){
-    setProgress(s.progress);
+    /* ต่อช่วงจากแถบอัปโหลด (0-40%) ไม่ใช่เริ่มนับใหม่ ไม่งั้นแถบจะถอยหลังกลับไป 0% */
+    setProgress(40 + s.progress * 0.6);
     $('stage').textContent = s.stage;
     if(s.status === 'done'){
       return fetch('/api/result/' + jobId).then(function(r){ return r.json(); })

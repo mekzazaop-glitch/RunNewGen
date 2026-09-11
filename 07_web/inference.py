@@ -210,7 +210,7 @@ def validate_video(path, max_duration_sec=MAX_DURATION_SEC, max_size_mb=MAX_FILE
     if size_mb > max_size_mb:
         raise ValueError(f"ไฟล์ใหญ่เกินไป ({size_mb:.0f}MB) จำกัดไว้ที่ {max_size_mb}MB")
 
-    cap = cv2.VideoCapture(path)
+    cap = open_video(path)  # จำกัด thread ตั้งแต่ตอนเปิดครั้งแรก (ดู DECODE_THREADS ด้านล่าง)
     if not cap.isOpened():
         raise ValueError("เปิดไฟล์วิดีโอไม่ได้ — ตรวจสอบว่าเป็นไฟล์ .mp4/.mov ที่ไม่เสีย")
     fps = cap.get(cv2.CAP_PROP_FPS) or 30
@@ -225,11 +225,25 @@ def validate_video(path, max_duration_sec=MAX_DURATION_SEC, max_size_mb=MAX_FILE
     return duration
 
 
+# จำนวน thread ของตัวถอดรหัสวิดีโอ (FFmpeg) — ห้ามปล่อยเป็นค่าเริ่มต้น
+# ค่าเริ่มต้น FFmpeg เปิด thread เท่าจำนวนคอร์ที่ "มองเห็น" และแต่ละ thread จองบัฟเฟอร์เฟรมของตัวเอง
+# วัดจริงกับคลิป 4K HEVC (baikaw.MOV): 16 thread = decoder ใช้แรม 938MB, 2 thread = 279MB
+# บน container มักมองเห็นคอร์ของเครื่อง host ทั้งเครื่อง (มากกว่า vCPU ที่ได้จริง) จึงยิ่งอันตราย
+# — เคยทำให้เซิร์ฟเวอร์บน Railway (เพดานแรม 1GB) ถูก OOM killer ฆ่าทิ้งกลางการวิเคราะห์
+# จำนวน thread ไม่เปลี่ยนพิกเซลที่ถอดรหัสได้ ผลลัพธ์จึงเหมือนเดิมเป๊ะ (ไม่เกิด train-serve skew)
+DECODE_THREADS = int(os.environ.get("DECODE_THREADS", "2"))
+
+
+def open_video(path):
+    """เปิดวิดีโอโดยจำกัด thread ของตัวถอดรหัส (ดูเหตุผลที่ DECODE_THREADS ด้านบน)"""
+    return cv2.VideoCapture(path, cv2.CAP_FFMPEG, [cv2.CAP_PROP_N_THREADS, DECODE_THREADS])
+
+
 def extract_right_side_landmarks(video_path, progress_cb=None):
     """อ่านวิดีโอ -> letterbox เป็น 960x720 (เหมือน 00_resize_videos.py เป๊ะ) -> สุ่มเฟรมทุก
     1/SAMPLE_FPS วินาที (เหมือน 01_extract_landmarks.py) -> สกัด 6 จุดฝั่งขวาด้วย MediaPipe
     คืน DataFrame คอลัมน์ right_*_x/y (พิกเซลในเฟรม 960x720) ต่อเฟรมที่ตรวจเจอคน"""
-    cap = cv2.VideoCapture(video_path)
+    cap = open_video(video_path)
     if not cap.isOpened():
         raise ValueError("เปิดวิดีโอไม่ได้")
 
@@ -244,35 +258,48 @@ def extract_right_side_landmarks(video_path, progress_cb=None):
     out_idx = 0
 
     while True:
+        # เฟรมที่ไม่ได้สุ่มใช้ ให้ grab() เฉยๆ ไม่ต้อง retrieve() — grab() เลื่อนตำแหน่งไปเฟรมถัดไป
+        # โดยไม่ถอดรหัสเป็นภาพและไม่จองอาร์เรย์ใหม่ ส่วน cap.read() = grab() + retrieve() จึงได้
+        # "เฟรมเดียวกันเป๊ะ" กับโค้ดเดิมทุกประการ (ไม่กระทบผลลัพธ์/ไม่เกิด train-serve skew)
+        #
+        # สำคัญกับเซิร์ฟเวอร์ที่แรมจำกัด: คลิป 4K 60fps มี ~1,870 เฟรม แต่ใช้จริงแค่ ~310 เฟรม
+        # โค้ดเดิม read() ทุกเฟรมจึงจองอาร์เรย์เฟรมละ ~25MB รวมกว่า 1,500 ครั้งโดยเปล่าประโยชน์
+        # จนถูก OOM killer ฆ่าทิ้งบน Railway (เพดาน 1GB) — เจอมาแล้วตอน deploy จริง
+        if frame_idx_src % frame_interval != 0:
+            if not cap.grab():
+                break
+            frame_idx_src += 1
+            continue
+
         ret, frame = cap.read()
         if not ret:
             break
 
-        if frame_idx_src % frame_interval == 0:
-            letterboxed = resize_mod.letterbox_resize(frame)
-            timestamp_ms = int((frame_idx_src / src_fps) * 1000)
+        letterboxed = resize_mod.letterbox_resize(frame)
+        timestamp_ms = int((frame_idx_src / src_fps) * 1000)
+        del frame  # คืนอาร์เรย์เฟรมต้นฉบับ (4K = ~25MB) ทันที ไม่ต้องรอถึงรอบถัดไป
 
-            rgb = cv2.cvtColor(letterboxed, cv2.COLOR_BGR2RGB)
-            mp_image = mp.Image(image_format=mp.ImageFormat.SRGB, data=rgb)
-            result = detector.detect_for_video(mp_image, timestamp_ms)
+        rgb = cv2.cvtColor(letterboxed, cv2.COLOR_BGR2RGB)
+        mp_image = mp.Image(image_format=mp.ImageFormat.SRGB, data=rgb)
+        result = detector.detect_for_video(mp_image, timestamp_ms)
 
-            h, w = letterboxed.shape[:2]
-            # ต้องเรียก select_largest_person() เหมือนกับ 01_extract_landmarks.py เป๊ะ (ข้อควรระวัง #13
-            # ข้างบน) — เลือกคนที่กรอบครอบ 6 จุดใหญ่สุด แทนเชื่อ pose_landmarks[0] ตรงๆ ซึ่งเคยทำให้
-            # โมเดลหลงจับคนพื้นหลังที่เดิน/ยืนอยู่ไกลกว่าแทนนักวิ่งหลักบนลู่วิ่ง
-            pose = extract_mod.select_largest_person(result.pose_landmarks, w, h)
-            if pose is not None:
-                row = {}
-                for idx, name in extract_mod.RIGHT_SIDE_LANDMARKS.items():
-                    lm = pose[idx]
-                    row[f"{name}_x"] = lm.x * w
-                    row[f"{name}_y"] = lm.y * h
-                rows.append(row)
+        h, w = letterboxed.shape[:2]
+        # ต้องเรียก select_largest_person() เหมือนกับ 01_extract_landmarks.py เป๊ะ (ข้อควรระวัง #13
+        # ข้างบน) — เลือกคนที่กรอบครอบ 6 จุดใหญ่สุด แทนเชื่อ pose_landmarks[0] ตรงๆ ซึ่งเคยทำให้
+        # โมเดลหลงจับคนพื้นหลังที่เดิน/ยืนอยู่ไกลกว่าแทนนักวิ่งหลักบนลู่วิ่ง
+        pose = extract_mod.select_largest_person(result.pose_landmarks, w, h)
+        if pose is not None:
+            row = {}
+            for idx, name in extract_mod.RIGHT_SIDE_LANDMARKS.items():
+                lm = pose[idx]
+                row[f"{name}_x"] = lm.x * w
+                row[f"{name}_y"] = lm.y * h
+            rows.append(row)
 
-            out_idx += 1
-            if progress_cb and n_frames_total:
-                pct = 10 + int(50 * frame_idx_src / n_frames_total)  # ช่วง 10-60% ของ progress รวม
-                progress_cb(min(pct, 60), f"กำลังตรวจจับท่าทาง ({out_idx} เฟรม)")
+        out_idx += 1
+        if progress_cb and n_frames_total:
+            pct = 10 + int(50 * frame_idx_src / n_frames_total)  # ช่วง 10-60% ของ progress รวม
+            progress_cb(min(pct, 60), f"กำลังตรวจจับท่าทาง ({out_idx} เฟรม)")
 
         frame_idx_src += 1
 
