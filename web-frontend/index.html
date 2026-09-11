@@ -24,6 +24,8 @@
   --red-wash:rgba(255,46,63,.10);
   --red-glow:rgba(255,46,63,.34);
   --ok:#f6f0ee;
+  --warn:#f2b441;
+  --warn-wash:rgba(242,180,65,.09);
   --shadow:0 18px 44px rgba(0,0,0,.55);
   --grid:rgba(255,255,255,.045);
 }
@@ -41,6 +43,8 @@
   --red-wash:rgba(212,10,26,.075);
   --red-glow:rgba(212,10,26,.18);
   --ok:#150f0e;
+  --warn:#8f5400;
+  --warn-wash:rgba(143,84,0,.07);
   --shadow:0 14px 34px rgba(60,20,20,.10);
   --grid:rgba(0,0,0,.045);
 }
@@ -285,6 +289,13 @@ body{
   padding:14px 16px;margin-top:20px;font-size:13.5px;line-height:1.7;box-shadow:var(--shadow);
 }
 
+/* หมายเหตุผลก้ำกึ่ง — สีเหลือง แยกจาก error สีแดง ให้ชัดว่าวิเคราะห์สำเร็จแล้ว แค่ผลยังไม่ชัด */
+.notice{
+  border:1px solid var(--warn);background:var(--warn-wash);color:var(--ink-2);
+  padding:12px 14px;margin-top:18px;font-size:13px;line-height:1.75;
+}
+.notice b{color:var(--warn);font-weight:700}
+
 /* footer */
 footer{
   margin-top:44px;padding-top:18px;border-top:1px solid var(--line-soft);
@@ -379,6 +390,7 @@ footer{
       <div class="score-track"><div class="score-fill" id="scoreFill"></div><span class="pass"></span></div>
       <div class="score-legend"><span>0</span><span class="mid">50 = เส้นแบ่ง ถูก / ผิด</span><span>100</span></div>
       <div class="meta" id="meta"></div>
+      <div class="notice hidden" id="lowConf" role="note"></div>
     </div>
   </div>
 
@@ -732,19 +744,31 @@ function countTo(el, target, ms){
      เสริมที่วาดทับในเฟรมถัดไป — ถ้าไม่ทำงานเลยก็ไม่กระทบความถูกต้อง เพราะค่าถูกต้องอยู่แล้ว */
   var finalVal = Math.round(target);
   el.textContent = finalVal;
-  if(reduced) return;
+  /* แท็บถูกซ่อนอยู่ตอนผลออก (ผู้ใช้สลับไปทำอย่างอื่นระหว่างรอ 2-3 นาที) → ไม่ต้องเล่นแอนิเมชัน
+     ไม่งั้นพอกลับมาที่แท็บ เฟรมแรกจะเริ่มนับใหม่จาก 0 ทับเลขที่ถูกต้องที่แสดงอยู่แล้ว */
+  if(reduced || document.hidden) return;
 
   /* จุดสำคัญ: ห้ามเรียก step() แบบ synchronous ทันที เพราะเฟรมแรก (k=0) จะคำนวณได้ 0 แล้ว
      เขียนทับค่าที่ถูกต้องที่เพิ่งตั้งไว้ข้างบนทันที (คือบั๊กที่เจอไปแล้วรอบก่อน) ต้องส่งผ่าน
      requestAnimationFrame เท่านั้น ให้ค่าที่ถูกต้องคงอยู่จนกว่าเฟรมแรกของแอนิเมชันจะทำงานจริง */
-  var t0 = performance.now();
-  requestAnimationFrame(function step(now){
-    var k = Math.min(1, (now - t0) / ms);
+  /* เริ่มนับเวลาจากเฟรมแรกของแอนิเมชันเอง ไม่ใช่ performance.now() ตอนเรียกฟังก์ชัน —
+     timestamp ที่ requestAnimationFrame ส่งมาคือ "เวลาเริ่มเฟรม" ซึ่งอาจเก่ากว่าตอนเรียก
+     ทำให้ k ติดลบ แล้วสูตร easing ขยายเป็นเลขติดลบก้อนใหญ่ (ทดสอบจริงเห็น -471 แทน 72)
+     และถ้าเฟรมหยุดทำงานพอดี (สลับแท็บ/throttle) เลขติดลบนั้นจะค้างอยู่บนจอ */
+  var t0 = null, done = false;
+  function step(now){
+    if(done){ el.textContent = finalVal; return; }
+    if(t0 === null) t0 = now;
+    var k = Math.max(0, Math.min(1, (now - t0) / ms));
     var e = 1 - Math.pow(1 - k, 3);
-    el.textContent = Math.round(target * e);
-    if(k < 1) requestAnimationFrame(step);
-    else el.textContent = finalVal;
-  });
+    el.textContent = k < 1 ? Math.round(target * e) : finalVal;
+    if(k < 1) requestAnimationFrame(step); else done = true;
+  }
+  requestAnimationFrame(step);
+  /* กันเหนียว: หมดเวลาแอนิเมชันแล้วต้องจบที่ค่าจริง และตั้ง done ไว้ด้วย — เฟรมที่มาช้า
+     (เบราว์เซอร์เพิ่งเริ่มวาดทีหลัง) จะได้ไม่เริ่มนับใหม่ทับเลขที่ถูกต้อง
+     (ทดสอบจริง: เฟรมแรกมาหลัง fallback แล้วเขียน "6" ทับค่า 49 ที่ถูกต้อง) */
+  setTimeout(function(){ done = true; el.textContent = finalVal; }, ms + 250);
 }
 
 function render(d){
@@ -817,8 +841,18 @@ function render(d){
     reveal($('advBox'), 300);
   }
 
+  /* ผลก้ำกึ่ง: แสดงเป็นหมายเหตุสีเหลืองในกล่องผล พร้อมตัวเลขความน่าจะเป็นจริง
+     เดิมใช้ showError() กล่องแดง ✕ เดียวกับ error จริง ผู้ใช้จึงเข้าใจว่าวิเคราะห์ล้มเหลว
+     ทั้งที่ผลออกครบแล้ว (เจอจริงกับ fed.MOV: ถูก 47.7% / ผิด 52.3%) */
+  var lc = $('lowConf');
   if(d.low_confidence){
-    showError('โมเดลมั่นใจในผลนี้ต่ำ ผลลัพธ์อาจไม่แม่นยำ — ลองถ่ายใหม่ตามเงื่อนไขการถ่ายด้านบน');
+    var p = d.class_probabilities || {};
+    lc.innerHTML = '<b>ผลก้ำกึ่ง</b> — โมเดลให้ความน่าจะเป็น ถูก ' + Math.round((p.correct || 0) * 100) +
+      '% / ผิด ' + Math.round((p.incorrect || 0) * 100) + '% ซึ่งใกล้เส้นแบ่งมาก ผลนี้จึงยังสรุปไม่ได้ชัดเจน ' +
+      'ลองถ่ายใหม่ตามเงื่อนไขการถ่ายด้านบนเพื่อให้ได้ผลที่ชัดขึ้น';
+    lc.classList.remove('hidden');
+  } else {
+    lc.classList.add('hidden');
   }
 }
 })();
