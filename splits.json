@@ -41,8 +41,8 @@
     "Fkorn",
     "Fnew",
     "Fnot",
+    "Ftime",
     "Fweir",
-    "Running Analysis",
     "Tatom",
     "Tkhing",
     "Tkorn",
@@ -55,10 +55,10 @@
   ],
   "test_subjects": [
     "Fmek",
-    "Ftime",
+    "Running Analysis",
     "Tbank",
     "Tdang"
   ],
-  "n_train": 5573,
-  "n_test": 1430
+  "n_train": 5602,
+  "n_test": 1172
 }

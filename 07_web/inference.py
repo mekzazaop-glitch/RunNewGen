@@ -88,7 +88,7 @@ ADVICE_LIBRARY = {
 # จึงแค่ลดจำนวนตัวอย่างที่เฉลี่ย ไม่เปลี่ยนค่าฟีเจอร์ต่อเฟรมเลย — ทดสอบกับข้อมูลจริงทั้ง 21 คลิป
 # (เทียบคำตัดสินที่ 10fps vs 5fps) แล้วพบว่าคำตัดสินไม่เปลี่ยนแม้แต่คลิปเดียว จึงลดเหลือ 5fps ได้
 # ลดเวลาวิเคราะห์ลงประมาณครึ่งหนึ่ง (MediaPipe heavy คือคอขวดจริง ไม่ใช่การอ่าน/ย่อวิดีโอ)
-SAMPLE_FPS = 5
+SAMPLE_FPS = 10
 MAX_DURATION_SEC = 60
 MAX_FILE_SIZE_MB = 500  # วิดีโอต้นฉบับ (4K 60fps) อาจใหญ่ถึง ~330MB เผื่อไว้ให้พอ
 # มั่นใจต่ำกว่านี้ -> เตือนผู้ใช้ว่าผลอาจไม่แม่น ดีกว่าตอบผิดอย่างมั่นใจ
@@ -256,9 +256,12 @@ def extract_right_side_landmarks(video_path, progress_cb=None):
             mp_image = mp.Image(image_format=mp.ImageFormat.SRGB, data=rgb)
             result = detector.detect_for_video(mp_image, timestamp_ms)
 
-            if result.pose_landmarks:
-                pose = result.pose_landmarks[0]
-                h, w = letterboxed.shape[:2]
+            h, w = letterboxed.shape[:2]
+            # ต้องเรียก select_largest_person() เหมือนกับ 01_extract_landmarks.py เป๊ะ (ข้อควรระวัง #13
+            # ข้างบน) — เลือกคนที่กรอบครอบ 6 จุดใหญ่สุด แทนเชื่อ pose_landmarks[0] ตรงๆ ซึ่งเคยทำให้
+            # โมเดลหลงจับคนพื้นหลังที่เดิน/ยืนอยู่ไกลกว่าแทนนักวิ่งหลักบนลู่วิ่ง
+            pose = extract_mod.select_largest_person(result.pose_landmarks, w, h)
+            if pose is not None:
                 row = {}
                 for idx, name in extract_mod.RIGHT_SIDE_LANDMARKS.items():
                     lm = pose[idx]

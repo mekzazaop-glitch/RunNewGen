@@ -1,0 +1,19 @@
+# กำหนดการ deploy backend (FastAPI + MediaPipe) ขึ้น Render.com
+# วิธีใช้: เข้า https://dashboard.render.com -> New -> Blueprint -> เลือก repo นี้
+# Render จะอ่านไฟล์นี้แล้วสร้าง service ให้อัตโนมัติ (ไม่ต้องตั้งค่าเองทีละช่อง)
+#
+# ⚠️ อ่าน DEPLOY.md ก่อน deploy จริง — มีข้อจำกัดสำคัญเรื่อง RAM ของแพลนฟรีที่ต้องรู้ก่อน
+
+services:
+  - type: web
+    name: runnewgen-backend
+    runtime: python
+    plan: free            # ⚠️ RAM 512MB อาจไม่พอสำหรับ MediaPipe heavy — ดูคำเตือนใน DEPLOY.md
+    # git lfs pull ป้องกันปัญหาไฟล์โมเดล/วิดีโอเป็นแค่ pointer เล็กๆ ไม่ใช่ไฟล์จริง (Git LFS)
+    # ใส่ || true กันไว้เผื่อ build image ไม่มี git-lfs ติดตั้งมา จะได้ไม่ build ล้มเหลวทั้งหมด
+    buildCommand: "git lfs pull || true && pip install -r requirements.txt"
+    startCommand: "cd 07_web && uvicorn app:app --host 0.0.0.0 --port $PORT"
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.12.10
+    healthCheckPath: /

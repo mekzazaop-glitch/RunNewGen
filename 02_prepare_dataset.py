@@ -51,6 +51,10 @@ UNSIGNED_ANGLE_COLUMNS = ["knee_angle", "hip_angle", "ankle_angle"]  # มุม
 SIGNED_ANGLE_COLUMNS = ["trunk_lean", "thigh_angle", "shank_angle", "foot_angle"]  # ขึ้นกับทิศที่หันหน้า ต้อง normalize ทิศด้วย
 ANGLE_FEATURE_COLUMNS = UNSIGNED_ANGLE_COLUMNS + SIGNED_ANGLE_COLUMNS
 
+# เคยทดลองตัดฟีเจอร์ที่ permutation importance ติดลบออก (ankle_x_norm, foot_index_x_norm,
+# knee_x_norm) แล้ววัด LOSO เทียบกัน — ผล: LOSO แย่ลง (0.709 -> 0.704 ± 0.126) ไม่ใช่ noise แต่ก็
+# ไม่ได้ดีขึ้นตามที่หวัง จึงตัดสินใจคงฟีเจอร์ทั้ง 17 ตัวไว้เหมือนเดิม (ค่าติดลบเล็กน้อยของ 3 ตัวนั้น
+# อยู่ในช่วง noise ของ permutation importance เอง ไม่ได้แปลว่าตัดออกแล้วจะดีขึ้นเสมอไป)
 FEATURE_COLUMNS = POINT_FEATURE_COLUMNS + ANGLE_FEATURE_COLUMNS
 
 

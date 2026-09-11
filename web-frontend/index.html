@@ -402,6 +402,12 @@ footer{
 'use strict';
 var $ = function(id){ return document.getElementById(id); };
 
+/* ---------------- API base ----------------
+   หน้านี้ deploy แยกจาก backend (frontend อยู่บน Vercel, backend อยู่คนละที่ เช่น Render)
+   จึงต้อง fetch แบบ absolute URL ไม่ใช่ path เดียวกัน (/api/...) เหมือนตอนรันรวมกันที่ localhost
+   ⚠️ แก้บรรทัดนี้เป็น URL จริงของ backend หลัง deploy เสร็จแล้ว (ดู DEPLOY.md) */
+var API_BASE = 'https://YOUR-BACKEND.onrender.com';
+
 /* ---------------- theme ---------------- */
 var root = document.documentElement;
 function setTheme(t){
@@ -636,7 +642,7 @@ go.addEventListener('click', function(){
 
   var form = new FormData();
   form.append('file', file);
-  fetch('/api/analyze', { method:'POST', body:form })
+  fetch(API_BASE + '/api/analyze', { method:'POST', body:form })
     .then(function(res){
       if(!res.ok) return res.json().catch(function(){ return {detail:'อัปโหลดล้มเหลว'}; })
                      .then(function(j){ throw new Error(j.detail || 'อัปโหลดล้มเหลว'); });
@@ -659,18 +665,18 @@ go.addEventListener('click', function(){
 });
 
 function poll(jobId){
-  return fetch('/api/status/' + jobId).then(function(res){
+  return fetch(API_BASE + '/api/status/' + jobId).then(function(res){
     if(!res.ok) throw new Error('เช็คสถานะไม่ได้ (job หมดอายุหรือเซิร์ฟเวอร์รีสตาร์ท)');
     return res.json();
   }).then(function(s){
     setProgress(s.progress);
     $('stage').textContent = s.stage;
     if(s.status === 'done'){
-      return fetch('/api/result/' + jobId).then(function(r){ return r.json(); })
+      return fetch(API_BASE + '/api/result/' + jobId).then(function(r){ return r.json(); })
         .then(function(data){ render(data); $('prog').classList.add('hidden'); });
     }
     if(s.status === 'failed'){
-      return fetch('/api/result/' + jobId)
+      return fetch(API_BASE + '/api/result/' + jobId)
         .then(function(r){ return r.json().catch(function(){ return {detail:'ประมวลผลล้มเหลว'}; }); })
         .then(function(j){ throw new Error(j.detail || 'ประมวลผลล้มเหลว'); });
     }
