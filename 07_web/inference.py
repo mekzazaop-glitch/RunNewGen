@@ -156,6 +156,7 @@ def build_angle_context(df, top_n=3):
         deviation = abs(value - mid) / half_range  # 0 = อยู่กลางช่วงปกติ, >1 = ออกนอกช่วงปกติแล้ว
 
         note = {
+            "key": col,
             "label": ANGLE_LABELS_TH.get(col, col),
             "value": round(value, 1),
             "typical_range": [round(lo, 1), round(hi, 1)],
@@ -172,6 +173,32 @@ def build_angle_context(df, top_n=3):
 
     notes.sort(key=lambda n: n["deviation"], reverse=True)
     return notes[:top_n]
+
+
+# มุมที่ส่งเป็นกราฟตามเวลา — เฉพาะมุมที่ช่วงปกติแคบพอจะอ่านความหมายได้ (ต้นขา/หน้าแข้ง/เท้า มีช่วงปกติ
+# กว้างเกินครึ่งวงกลม แรเงาแล้วครอบทั้งกราฟ ไม่ได้ช่วยให้ผู้ใช้อ่านง่ายขึ้น)
+TIMELINE_ANGLES = ["knee_angle", "hip_angle", "ankle_angle"]
+
+
+def build_timeline(df, frame_size):
+    """ข้อมูลรายเฟรมสำหรับหน้าเว็บ: เวลา, พิกัด 6 จุดบนภาพต้นฉบับ (สัดส่วน 0-1) และมุมข้อต่อ
+    ใช้วาดโครงร่างทับวิดีโอและกราฟตามเวลา — เป็นข้อมูลแสดงผลเท่านั้น ไม่มีผลต่อคำตัดสินของโมเดล"""
+    names = list(extract_mod.RIGHT_SIDE_LANDMARKS.values())
+    specs = get_score_config()
+    points = np.stack(
+        [np.stack([df[f"ov_{n}_x"].to_numpy(), df[f"ov_{n}_y"].to_numpy()], axis=1) for n in names], axis=1
+    )
+    angles = [c for c in TIMELINE_ANGLES if c in df.columns]
+    return {
+        "t": [round(float(v), 2) for v in df["t_sec"]],
+        "points": np.round(points, 4).tolist(),
+        "point_names": names,
+        "angles": {c: [round(float(v), 1) for v in df[c]] for c in angles},
+        "ranges": {c: [round(specs[c]["target_low"], 1), round(specs[c]["target_high"], 1)]
+                   for c in angles if c in specs},
+        "labels": {c: ANGLE_LABELS_TH.get(c, c) for c in angles},
+        "frame_size": list(frame_size) if frame_size else None,
+    }
 
 
 def score_from_threshold(proba_1, threshold):
@@ -239,6 +266,14 @@ def open_video(path):
     return cv2.VideoCapture(path, cv2.CAP_FFMPEG, [cv2.CAP_PROP_N_THREADS, DECODE_THREADS])
 
 
+def _letterbox_geometry(fw, fh, target_w=resize_mod.TARGET_W, target_h=resize_mod.TARGET_H):
+    """ตำแหน่งของภาพต้นฉบับภายในกรอบ letterbox — สูตรต้องตรงกับ 00_resize_videos.letterbox_resize เป๊ะ
+    คืน (กว้าง, สูง, x_offset, y_offset, new_w, new_h) ใช้แปลงพิกัดโครงร่างกลับไปวางทับวิดีโอต้นฉบับ"""
+    scale = min(target_w / fw, target_h / fh)
+    new_w, new_h = round(fw * scale), round(fh * scale)
+    return fw, fh, (target_w - new_w) // 2, (target_h - new_h) // 2, new_w, new_h
+
+
 def extract_right_side_landmarks(video_path, progress_cb=None):
     """อ่านวิดีโอ -> letterbox เป็น 960x720 (เหมือน 00_resize_videos.py เป๊ะ) -> สุ่มเฟรมทุก
     1/SAMPLE_FPS วินาที (เหมือน 01_extract_landmarks.py) -> สกัด 6 จุดฝั่งขวาด้วย MediaPipe
@@ -256,6 +291,7 @@ def extract_right_side_landmarks(video_path, progress_cb=None):
     rows = []
     frame_idx_src = 0
     out_idx = 0
+    geo = None
 
     while True:
         # เฟรมที่ไม่ได้สุ่มใช้ ให้ grab() เฉยๆ ไม่ต้อง retrieve() — grab() เลื่อนตำแหน่งไปเฟรมถัดไป
@@ -277,6 +313,8 @@ def extract_right_side_landmarks(video_path, progress_cb=None):
 
         letterboxed = resize_mod.letterbox_resize(frame)
         timestamp_ms = int((frame_idx_src / src_fps) * 1000)
+        if geo is None:
+            geo = _letterbox_geometry(frame.shape[1], frame.shape[0])
         del frame  # คืนอาร์เรย์เฟรมต้นฉบับ (4K = ~25MB) ทันที ไม่ต้องรอถึงรอบถัดไป
 
         rgb = cv2.cvtColor(letterboxed, cv2.COLOR_BGR2RGB)
@@ -289,11 +327,16 @@ def extract_right_side_landmarks(video_path, progress_cb=None):
         # โมเดลหลงจับคนพื้นหลังที่เดิน/ยืนอยู่ไกลกว่าแทนนักวิ่งหลักบนลู่วิ่ง
         pose = extract_mod.select_largest_person(result.pose_landmarks, w, h)
         if pose is not None:
-            row = {}
+            row = {"t_sec": timestamp_ms / 1000.0}
+            _, _, x_off, y_off, new_w, new_h = geo
             for idx, name in extract_mod.RIGHT_SIDE_LANDMARKS.items():
                 lm = pose[idx]
                 row[f"{name}_x"] = lm.x * w
                 row[f"{name}_y"] = lm.y * h
+                # พิกัดสัดส่วน 0-1 บนภาพต้นฉบับ (ถอดแถบดำ letterbox ออก) ให้หน้าเว็บวาดโครงร่างทับวิดีโอได้ตรง
+                # ไม่ใช่ feature ของโมเดล — โมเดลอ่านเฉพาะคอลัมน์ใน FEATURE_COLUMNS ผลทำนายจึงไม่เปลี่ยน
+                row[f"ov_{name}_x"] = (lm.x * w - x_off) / new_w
+                row[f"ov_{name}_y"] = (lm.y * h - y_off) / new_h
             rows.append(row)
 
         out_idx += 1
@@ -305,7 +348,9 @@ def extract_right_side_landmarks(video_path, progress_cb=None):
 
     cap.release()
     detector.close()
-    return pd.DataFrame(rows)
+    out = pd.DataFrame(rows)
+    out.attrs["frame_size"] = (geo[0], geo[1]) if geo else None
+    return out
 
 
 def analyze_video(video_path, progress_cb=None):
@@ -324,6 +369,7 @@ def analyze_video(video_path, progress_cb=None):
 
     report(5, "กำลังเปิดโมเดลตรวจจับท่าทาง (ขั้นตอนนี้ใช้เวลานานสุด)")
     raw_df = extract_right_side_landmarks(video_path, progress_cb=report)
+    frame_size = raw_df.attrs.get("frame_size")
 
     if len(raw_df) < MIN_USABLE_FRAMES:
         raise ValueError(
@@ -371,6 +417,7 @@ def analyze_video(video_path, progress_cb=None):
         },
         "low_confidence": confidence < REJECT_CONFIDENCE_THRESHOLD,
         "angle_context": build_angle_context(df, top_n=6),  # ข้อมูลประกอบ+คำแนะนำ ไม่ใช่คะแนนแยก (ดู 05_score_calibration.py)
+        "timeline": build_timeline(df, frame_size),  # โครงร่างทับวิดีโอ + กราฟตามเวลา (แสดงผลเท่านั้น)
     }
 
     report(100, "เสร็จสิ้น")

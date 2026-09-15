@@ -9,7 +9,7 @@
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Anuphan:wght@400;500;600&family=Bai+Jamjuree:wght@600;700&family=JetBrains+Mono:wght@400;500&display=swap">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <style>
-/* ============================ tokens ============================ */
+/* ============================ tokens (เดิม) ============================ */
 :root{
   --bg:#0a0807;
   --surface:#121010;
@@ -26,6 +26,7 @@
   --ok:#f6f0ee;
   --warn:#f2b441;
   --warn-wash:rgba(242,180,65,.09);
+  --band:rgba(246,240,238,.07);
   --shadow:0 18px 44px rgba(0,0,0,.55);
   --grid:rgba(255,255,255,.045);
 }
@@ -45,6 +46,7 @@
   --ok:#150f0e;
   --warn:#8f5400;
   --warn-wash:rgba(143,84,0,.07);
+  --band:rgba(21,15,14,.06);
   --shadow:0 14px 34px rgba(60,20,20,.10);
   --grid:rgba(0,0,0,.045);
 }
@@ -58,33 +60,28 @@ body{
   font-size:15px;line-height:1.7;-webkit-font-smoothing:antialiased;
   transition:background .45s ease,color .45s ease;
 }
-.wrap{max-width:860px;margin:0 auto;padding:0 22px 96px}
-
+.wrap{max-width:1280px;margin:0 auto;padding:0 22px 72px}
 .mono{font-family:"JetBrains Mono","Anuphan",ui-monospace,monospace;font-variant-numeric:tabular-nums}
 .eyebrow{
   font-family:"JetBrains Mono","Anuphan",monospace;font-size:10.5px;
-  letter-spacing:.2em;text-transform:uppercase;color:var(--red);font-weight:500;
+  letter-spacing:.16em;text-transform:uppercase;color:var(--red);font-weight:500;white-space:nowrap;
 }
+.hidden{display:none !important}
 
 /* ============================ topbar ============================ */
 .topbar{
   display:flex;align-items:center;justify-content:space-between;gap:16px;
-  padding:28px 0 20px;border-bottom:1px solid var(--line-soft);
+  padding:22px 0 16px;border-bottom:1px solid var(--line-soft);
 }
 .brand{display:flex;align-items:baseline;gap:11px;flex-wrap:wrap}
 .brand h1{
   font-family:"Bai Jamjuree","Anuphan",sans-serif;font-weight:700;
-  font-size:clamp(20px,3.4vw,26px);line-height:1.5;margin:0;letter-spacing:.005em;
+  font-size:clamp(20px,3vw,25px);line-height:1.5;margin:0;
 }
-.brand .tag{
-  font-family:"JetBrains Mono",monospace;font-size:10px;letter-spacing:.16em;
-  color:var(--muted);text-transform:uppercase;
-}
-
+.brand .tag{font-family:"JetBrains Mono",monospace;font-size:10px;letter-spacing:.16em;color:var(--muted);text-transform:uppercase}
 .tglr{
-  position:relative;display:inline-flex;align-items:center;gap:0;
-  border:1px solid var(--line);border-radius:999px;padding:3px;background:var(--surface);
-  flex:0 0 auto;box-shadow:var(--shadow);
+  position:relative;display:inline-flex;align-items:center;
+  border:1px solid var(--line);border-radius:999px;padding:3px;background:var(--surface);flex:0 0 auto;
 }
 .tglr button{
   position:relative;z-index:1;border:0;background:transparent;cursor:pointer;
@@ -100,69 +97,42 @@ body{
 .tglr svg{width:14px;height:14px;display:block}
 .tglr button:focus-visible{outline:2px solid var(--red);outline-offset:2px}
 
-/* ============================ hero 3D ============================ */
-.stage{
-  position:relative;border:1px solid var(--line);margin-top:22px;
-  height:236px;overflow:hidden;box-shadow:var(--shadow);cursor:grab;touch-action:none;
-  transition:box-shadow .35s ease,border-color .35s ease;
-  background:
-    linear-gradient(0deg,var(--grid) 1px,transparent 1px) 0 0/100% 26px,
-    linear-gradient(90deg,var(--grid) 1px,transparent 1px) 0 0/26px 100%,
-    radial-gradient(120% 90% at 50% 120%, var(--red-wash) 0%, transparent 60%),
-    var(--surface);
+/* ============================ toolbar ============================ */
+.toolbar{display:flex;align-items:flex-end;justify-content:space-between;gap:14px 20px;flex-wrap:wrap;margin-top:22px}
+.toolbar h2{font-family:"Bai Jamjuree","Anuphan",sans-serif;font-weight:700;font-size:22px;line-height:1.4;margin:0}
+.toolbar p{margin:2px 0 0;color:var(--ink-2);font-size:14px}
+.actions{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.btn{
+  border:1px solid var(--line);background:var(--surface);color:var(--ink);cursor:pointer;
+  font-family:"Bai Jamjuree","Anuphan",sans-serif;font-weight:600;font-size:14.5px;line-height:1.5;
+  padding:10px 18px;display:inline-flex;align-items:center;gap:8px;transition:border-color .25s ease,color .25s ease;
 }
-.stage:active{cursor:grabbing}
-.stage.busy{box-shadow:var(--shadow),0 0 0 1px var(--red);border-color:var(--red)}
-.stage canvas{display:block;width:100%;height:100%;position:relative;z-index:1}
-.stage .ov{
-  position:absolute;left:14px;top:12px;z-index:3;font-family:"JetBrains Mono",monospace;
-  font-size:9.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--ink-2);
-  pointer-events:none;
+.btn:hover{border-color:var(--red);color:var(--red)}
+.btn:focus-visible{outline:2px solid var(--red);outline-offset:2px}
+.btn svg{width:16px;height:16px}
+.btn.sm{padding:5px 12px;font-size:13px}
+.go{
+  position:relative;border:1px solid var(--red);background:var(--red);color:#fff;cursor:pointer;
+  font-family:"Bai Jamjuree","Anuphan",sans-serif;font-weight:600;font-size:14.5px;line-height:1.5;
+  padding:10px 24px;transition:background .25s ease,opacity .25s ease,border-color .25s ease;
 }
-.stage .ov b{color:var(--red);font-weight:500}
-.stage-hint{
-  position:absolute;right:14px;bottom:12px;z-index:3;pointer-events:none;
-  font-family:"JetBrains Mono",monospace;font-size:9.5px;letter-spacing:.08em;
-  color:var(--muted);opacity:.75;
-}
-/* แถบสแกนตอนกำลังประมวลผล */
-.stage .scanbar{
-  position:absolute;left:0;top:0;width:100%;height:2px;z-index:2;pointer-events:none;
-  background:linear-gradient(90deg,transparent,var(--red),transparent);
-  opacity:0;
-}
-.stage.busy .scanbar{opacity:.9;animation:scandown 1.5s ease-in-out infinite}
-@keyframes scandown{0%{top:0}50%{top:calc(100% - 2px)}100%{top:0}}
+.go:not(:disabled):hover{background:var(--red-2);border-color:var(--red-2)}
+.go:disabled{opacity:.4;cursor:not-allowed;background:transparent;border-color:var(--line);color:var(--muted)}
+.go:focus-visible{outline:2px solid var(--red);outline-offset:3px}
+#fileInput{display:none}
 
-/* ============================ notice ============================ */
-.notice{
-  border-left:2px solid var(--red);background:var(--red-wash);
-  padding:14px 16px;margin:20px 0 0;font-size:13.5px;line-height:1.75;color:var(--ink-2);
+/* guide */
+details.guide-box{border:1px solid var(--line);background:var(--surface);margin-top:16px}
+details.guide-box summary{
+  list-style:none;cursor:pointer;padding:11px 16px;display:flex;align-items:center;justify-content:space-between;gap:12px;
+  font-family:"Bai Jamjuree","Anuphan",sans-serif;font-weight:600;font-size:14.5px;
 }
-.notice b{color:var(--ink);font-weight:600}
-
-/* ============================ panels ============================ */
-.panel{
-  border:1px solid var(--line);background:var(--surface);margin-top:20px;
-  box-shadow:var(--shadow);transition:border-color .3s ease,box-shadow .3s ease,transform .3s ease;
-}
-.panel:hover{border-color:var(--line-2,var(--line))}
-.panel-h{
-  display:flex;align-items:center;justify-content:space-between;gap:12px;
-  padding:14px 18px;border-bottom:1px solid var(--line-soft);
-}
-.panel-h .t{
-  font-family:"Bai Jamjuree","Anuphan",sans-serif;font-weight:600;font-size:14.5px;line-height:1.6;
-}
-.panel-b{padding:20px}
-
-.guide{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:0 24px;margin:0;padding:0;list-style:none}
-.guide li{
-  display:flex;gap:12px;align-items:flex-start;padding:9px 0;font-size:13.5px;color:var(--ink-2);
-  border-bottom:1px solid var(--line-soft);transition:padding-left .25s ease;
-}
-.guide li:hover{padding-left:4px}
-.guide li:last-child,.guide li:nth-last-child(2):nth-child(odd){border-bottom:0}
+details.guide-box summary::-webkit-details-marker{display:none}
+details.guide-box summary::after{content:"+";font-family:"JetBrains Mono",monospace;color:var(--red);font-size:16px}
+details.guide-box[open] summary::after{content:"−"}
+details.guide-box summary:focus-visible{outline:2px solid var(--red);outline-offset:-2px}
+.guide{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:0 24px;margin:0;padding:0 16px 10px;list-style:none;border-top:1px solid var(--line-soft)}
+.guide li{display:flex;gap:10px;align-items:flex-start;padding:9px 0;font-size:13.5px;color:var(--ink-2)}
 .guide .k{
   flex:0 0 auto;width:20px;height:20px;border-radius:50%;background:var(--red-wash);
   color:var(--red);font-family:"JetBrains Mono",monospace;font-size:9.5px;font-weight:500;
@@ -170,144 +140,144 @@ body{
 }
 .guide b{color:var(--ink);font-weight:600}
 
-/* ============================ dropzone ============================ */
-.drop{
-  position:relative;border:1px dashed var(--line);background:var(--bg);
-  padding:38px 20px;text-align:center;cursor:pointer;overflow:hidden;
-  transition:border-color .3s ease,background .3s ease;
-}
-.drop:hover{border-color:var(--red)}
-.drop.on{border-color:var(--red);background:var(--red-wash);border-style:solid}
-.drop::after{ /* scan sweep */
-  content:"";position:absolute;left:-40%;top:0;width:40%;height:100%;
-  background:linear-gradient(90deg,transparent,var(--red-glow),transparent);
-  opacity:0;pointer-events:none;
-}
-.drop.on::after{opacity:1;animation:scan 1.15s linear infinite}
-@keyframes scan{from{left:-40%}to{left:110%}}
-.drop .cnr{position:absolute;width:13px;height:13px;border:1.5px solid var(--red);opacity:0;transition:opacity .28s ease,transform .28s ease}
-.drop .c1{left:9px;top:9px;border-right:0;border-bottom:0;transform:translate(5px,5px)}
-.drop .c2{right:9px;top:9px;border-left:0;border-bottom:0;transform:translate(-5px,5px)}
-.drop .c3{left:9px;bottom:9px;border-right:0;border-top:0;transform:translate(5px,-5px)}
-.drop .c4{right:9px;bottom:9px;border-left:0;border-top:0;transform:translate(-5px,-5px)}
-.drop:hover .cnr,.drop.on .cnr{opacity:1;transform:translate(0,0)}
-.drop .lead{font-size:14px;color:var(--ink-2);position:relative;z-index:1}
-.drop .fname{
-  margin-top:9px;font-family:"JetBrains Mono",monospace;font-size:12px;color:var(--red);
-  position:relative;z-index:1;word-break:break-all;
-}
-#fileInput{display:none}
-
-/* ============================ button ============================ */
-.go{
-  position:relative;width:100%;margin-top:14px;border:1px solid var(--red);
-  background:transparent;color:var(--red);cursor:pointer;overflow:hidden;isolation:isolate;
-  font-family:"Bai Jamjuree","Anuphan",sans-serif;font-weight:600;font-size:15px;line-height:1.6;
-  padding:13px 20px;letter-spacing:.02em;transition:color .3s ease,opacity .25s ease,border-color .3s ease;
-}
-.go::before{
-  content:"";position:absolute;inset:0;z-index:-1;background:var(--red);
-  transform:scaleX(0);transform-origin:left;transition:transform .42s cubic-bezier(.65,.05,.2,1);
-}
-.go:not(:disabled):hover::before{transform:scaleX(1)}
-.go:not(:disabled):hover{color:var(--bg)}
-.go:disabled{opacity:.32;cursor:not-allowed;border-color:var(--line);color:var(--muted)}
-.go:focus-visible{outline:2px solid var(--red);outline-offset:3px}
-
-/* ============================ progress ============================ */
-.prog{margin-top:16px}
-.ticks{display:flex;gap:2px;height:22px;align-items:flex-end}
-.ticks i{flex:1;background:var(--line);height:7px;transition:height .3s ease,background .3s ease}
-.ticks i.hit{background:var(--red);height:22px}
-.prog-meta{display:flex;justify-content:space-between;gap:12px;margin-top:9px;font-family:"JetBrains Mono",monospace;font-size:11.5px;color:var(--muted)}
+/* progress */
+.prog{margin-top:16px;border:1px solid var(--line);background:var(--surface);padding:12px 16px}
+.ticks{display:flex;gap:2px;height:18px;align-items:flex-end}
+.ticks i{flex:1;background:var(--line);height:6px;transition:height .3s ease,background .3s ease}
+.ticks i.hit{background:var(--red);height:18px}
+.prog-meta{display:flex;justify-content:space-between;gap:12px;margin-top:8px;font-family:"JetBrains Mono","Anuphan",monospace;font-size:11.5px;color:var(--muted)}
 .prog-meta .pc{color:var(--red)}
 
-/* ============================ result ============================ */
-.reveal{opacity:0;transform:translateY(14px)}
-.reveal.in{opacity:1;transform:none;transition:opacity .6s ease,transform .6s cubic-bezier(.2,.7,.3,1)}
-
-.verdict{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
-.vmark{
-  width:34px;height:34px;flex:0 0 auto;border-radius:50%;display:grid;place-items:center;
-  font-size:17px;font-weight:700;border:1.5px solid currentColor;
-}
-.v-ok{color:var(--ok)}
-.v-bad{color:var(--red)}
-.vtext{font-family:"Bai Jamjuree","Anuphan",sans-serif;font-weight:700;font-size:19px;line-height:1.5}
-
-.score-row{display:flex;align-items:flex-end;gap:16px;margin-top:22px;flex-wrap:wrap}
-.score-num{
-  font-family:"Bai Jamjuree",sans-serif;font-weight:700;font-variant-numeric:tabular-nums;
-  font-size:clamp(54px,12vw,84px);line-height:.95;letter-spacing:-.02em;color:var(--red);
-}
-.score-of{font-family:"JetBrains Mono",monospace;font-size:12px;color:var(--muted);padding-bottom:10px;letter-spacing:.1em}
-.score-track{position:relative;width:100%;height:4px;background:var(--surface-2);margin-top:14px}
-.score-fill{height:100%;width:0;background:var(--red);transition:width 1.15s cubic-bezier(.2,.7,.3,1)}
-.score-track .pass{position:absolute;left:50%;top:-5px;width:1px;height:14px;background:var(--ink-2);opacity:.55}
-.score-legend{
-  display:flex;justify-content:space-between;margin-top:7px;
-  font-family:"JetBrains Mono",monospace;font-size:10px;color:var(--muted);letter-spacing:.06em;
-}
-.score-legend .mid{color:var(--ink-2)}
-.meta{
-  margin-top:14px;padding-top:13px;border-top:1px solid var(--line-soft);
-  font-family:"JetBrains Mono",monospace;font-size:11.5px;color:var(--muted);
-  display:flex;gap:18px;flex-wrap:wrap;
-}
-.meta b{color:var(--ink-2);font-weight:500}
-
-/* angle gauges */
-.ang{padding:13px 0;border-bottom:1px solid var(--line-soft)}
-.ang:last-child{border-bottom:0}
-.ang-top{display:flex;justify-content:space-between;gap:12px;align-items:baseline}
-.ang-nm{font-size:14px;font-weight:500}
-.ang-v{font-family:"JetBrains Mono",monospace;font-size:12.5px;color:var(--red)}
-.gauge{position:relative;height:16px;margin-top:9px}
-.gauge .axis{position:absolute;left:0;right:0;top:7px;height:2px;background:var(--surface-2)}
-.gauge .band{position:absolute;top:5px;height:6px;background:var(--red-wash);border:1px solid var(--red);opacity:.55}
-.gauge .pin{
-  position:absolute;top:0;width:2px;height:16px;background:var(--red);
-  transform:scaleY(0);transform-origin:center;transition:transform .5s cubic-bezier(.2,.7,.3,1);
-}
-.gauge.in .pin{transform:scaleY(1)}
-.ang-rng{font-family:"JetBrains Mono",monospace;font-size:10.5px;color:var(--muted);margin-top:6px}
-
-/* advice */
-.adv{padding:15px 0 15px 15px;border-left:2px solid var(--line);transition:border-color .3s ease,background .3s ease}
-.adv:hover{border-color:var(--red);background:var(--red-wash)}
-.adv + .adv{margin-top:4px}
-.adv .h{font-family:"Bai Jamjuree","Anuphan",sans-serif;font-weight:600;font-size:14.5px;line-height:1.6}
-.adv .h sup{font-family:"JetBrains Mono",monospace;font-size:9.5px;color:var(--red);margin-left:4px}
-.adv .b{font-size:13.5px;color:var(--ink-2);margin-top:5px;line-height:1.75}
-.refs{margin-top:18px;padding-top:14px;border-top:1px solid var(--line-soft)}
-.refs .lbl{font-family:"JetBrains Mono",monospace;font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted)}
-.refs ol{margin:8px 0 0;padding-left:19px;font-size:11.5px;color:var(--muted);line-height:1.85}
-
-/* error */
-.err{
-  border:1px solid var(--red);background:var(--red-wash);color:var(--red);
-  padding:14px 16px;margin-top:20px;font-size:13.5px;line-height:1.7;box-shadow:var(--shadow);
-}
-
-/* หมายเหตุผลก้ำกึ่ง — สีเหลือง แยกจาก error สีแดง ให้ชัดว่าวิเคราะห์สำเร็จแล้ว แค่ผลยังไม่ชัด */
-.notice{
-  border:1px solid var(--warn);background:var(--warn-wash);color:var(--ink-2);
-  padding:12px 14px;margin-top:18px;font-size:13px;line-height:1.75;
-}
+/* messages */
+.err{border:1px solid var(--red);background:var(--red-wash);color:var(--red);padding:12px 16px;margin-top:16px;font-size:13.5px;line-height:1.7}
+.notice{border:1px solid var(--warn);background:var(--warn-wash);color:var(--ink-2);padding:10px 12px;margin-top:12px;font-size:13px;line-height:1.7}
 .notice b{color:var(--warn);font-weight:700}
 
-/* footer */
-footer{
-  margin-top:44px;padding-top:18px;border-top:1px solid var(--line-soft);
-  font-family:"JetBrains Mono",monospace;font-size:10.5px;color:var(--muted);
-  display:flex;justify-content:space-between;gap:14px;flex-wrap:wrap;letter-spacing:.05em;
+/* ============================ cards ============================ */
+.cols{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;margin-top:16px}
+.cols2{display:grid;grid-template-columns:minmax(0,1.7fr) minmax(0,1fr);gap:16px;margin-top:16px;align-items:start}
+.card{border:1px solid var(--line);background:var(--surface);box-shadow:var(--shadow);display:flex;flex-direction:column;min-width:0}
+.card-h{display:flex;align-items:center;gap:10px;padding:11px 16px;border-bottom:1px solid var(--line-soft);min-height:50px}
+.card-h .t{font-family:"Bai Jamjuree","Anuphan",sans-serif;font-weight:600;font-size:15px;line-height:1.5;margin:0;flex:1;min-width:0}
+.num{
+  flex:0 0 auto;width:22px;height:22px;border-radius:50%;background:var(--red-wash);color:var(--red);
+  font-family:"JetBrains Mono",monospace;font-size:11px;font-weight:500;display:grid;place-items:center;
 }
-.hidden{display:none !important}
+.card-f{
+  padding:9px 16px;border-top:1px solid var(--line-soft);display:flex;align-items:center;justify-content:space-between;
+  gap:10px;min-height:46px;font-size:12.5px;color:var(--muted);flex-wrap:wrap;
+}
 
-@media (max-width:600px){
-  .wrap{padding:0 16px 72px}
-  .stage{height:176px}
-  .meta{gap:12px}
+/* media boxes (ช่อง 1 และ 2) */
+.media{position:relative;flex:1;min-height:380px;background:var(--bg);overflow:hidden}
+.media video,.media #ov{position:absolute;inset:0;width:100%;height:100%;display:block;background:var(--bg)}
+.media video{object-fit:contain}
+.drop{
+  position:absolute;inset:14px;border:1px dashed var(--line);display:flex;flex-direction:column;
+  align-items:center;justify-content:center;gap:8px;text-align:center;cursor:pointer;padding:20px;
+  transition:border-color .3s ease,background .3s ease;
+}
+.drop:hover,.drop:focus-visible{border-color:var(--red);outline:none}
+.media.on .drop,.media.on{border-color:var(--red)}
+.media.on .drop{background:var(--red-wash);border-style:solid}
+.drop svg{width:34px;height:34px;color:var(--red)}
+.drop .lead{font-size:14.5px;color:var(--ink)}
+.drop .sub{font-family:"JetBrains Mono","Anuphan",monospace;font-size:11.5px;color:var(--muted)}
+.nop{position:absolute;inset:14px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;text-align:center;padding:20px;border:1px solid var(--line)}
+.nop b{font-family:"Bai Jamjuree","Anuphan",sans-serif;font-size:15px}
+.nop p{margin:0;font-size:13px;color:var(--ink-2);max-width:34ch}
+.fname{font-family:"JetBrains Mono","Anuphan",monospace;font-size:12px;color:var(--ink-2);word-break:break-all}
+
+/* 3D stage (ช่อง 2 ก่อนวิเคราะห์) */
+.stage{
+  position:absolute;inset:0;cursor:grab;touch-action:none;
+  background:
+    linear-gradient(0deg,var(--grid) 1px,transparent 1px) 0 0/100% 26px,
+    linear-gradient(90deg,var(--grid) 1px,transparent 1px) 0 0/26px 100%,
+    radial-gradient(120% 90% at 50% 120%, var(--red-wash) 0%, transparent 60%),
+    var(--surface);
+}
+.stage:active{cursor:grabbing}
+.stage canvas{display:block;width:100%;height:100%;position:relative;z-index:1}
+.stage-hint{position:absolute;right:12px;bottom:10px;z-index:3;pointer-events:none;font-family:"JetBrains Mono","Anuphan",monospace;font-size:10px;color:var(--muted)}
+.stage .scanbar{position:absolute;left:0;top:0;width:100%;height:2px;z-index:2;pointer-events:none;background:linear-gradient(90deg,transparent,var(--red),transparent);opacity:0}
+.media.busy{box-shadow:inset 0 0 0 1px var(--red)}
+.media.busy .stage .scanbar{opacity:.9;animation:scandown 1.5s ease-in-out infinite}
+@keyframes scandown{0%{top:0}50%{top:calc(100% - 2px)}100%{top:0}}
+.pbar{display:flex;align-items:center;gap:10px}
+
+/* ช่อง 3: ผลลัพธ์ */
+.res-empty{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;text-align:center;padding:36px 24px;color:var(--muted);font-size:13.5px}
+.res-empty svg{width:40px;height:40px;opacity:.6}
+.res{padding:12px 18px 16px;display:flex;flex-direction:column}
+.reveal{opacity:0;transform:translateY(10px)}
+.reveal.in{opacity:1;transform:none;transition:opacity .5s ease,transform .5s cubic-bezier(.2,.7,.3,1)}
+#gauge{width:100%;max-width:280px;height:auto;display:block;margin:0 auto}
+#gauge text{font-family:"JetBrains Mono","Anuphan",monospace;font-size:10px;fill:var(--muted)}
+.score-row{display:flex;align-items:baseline;justify-content:center;gap:8px;margin-top:-8px}
+.score-num{font-family:"Bai Jamjuree",sans-serif;font-weight:700;font-variant-numeric:tabular-nums;font-size:48px;line-height:1;color:var(--red)}
+.score-num.ok{color:var(--ok)}
+.score-of{font-family:"JetBrains Mono",monospace;font-size:12px;color:var(--muted)}
+.verdict{display:flex;align-items:center;justify-content:center;gap:10px;margin-top:10px}
+.vmark{width:28px;height:28px;flex:0 0 auto;border-radius:50%;display:grid;place-items:center;font-size:14px;font-weight:700;border:1.5px solid currentColor}
+.v-ok{color:var(--ok)}
+.v-bad{color:var(--red)}
+.vtext{font-family:"Bai Jamjuree","Anuphan",sans-serif;font-weight:700;font-size:17px;line-height:1.5}
+.meta{margin-top:10px;padding-top:10px;border-top:1px solid var(--line-soft);font-family:"JetBrains Mono","Anuphan",monospace;font-size:11.5px;color:var(--muted);display:flex;gap:6px 16px;flex-wrap:wrap;justify-content:center}
+.meta b{color:var(--ink-2);font-weight:500}
+.sub-h{font-family:"Bai Jamjuree","Anuphan",sans-serif;font-weight:600;font-size:13.5px;margin:14px 0 2px;color:var(--ink-2)}
+.km{padding:9px 0;border-bottom:1px solid var(--line-soft);cursor:pointer}
+.km:last-child{border-bottom:0}
+.km:hover .km-n{color:var(--red)}
+.km-top{display:flex;align-items:center;gap:10px}
+.km-n{flex:1;font-size:14px;font-weight:500;transition:color .2s ease}
+.km-v{font-size:12.5px;color:var(--ink)}
+.chip{display:inline-flex;align-items:center;gap:4px;font-family:"JetBrains Mono","Anuphan",monospace;font-size:10.5px;padding:1px 8px;border:1px solid var(--line);color:var(--ink-2);white-space:nowrap}
+.chip.out{border-color:var(--warn);color:var(--warn);background:var(--warn-wash)}
+.gauge{position:relative;height:12px;margin-top:7px}
+.gauge .axis{position:absolute;left:0;right:0;top:5px;height:2px;background:var(--surface-2)}
+.gauge .band{position:absolute;top:3px;height:6px;background:var(--band);border:1px solid var(--ink-2);opacity:.6}
+.gauge .pin{position:absolute;top:0;width:2px;height:12px;background:var(--red);margin-left:-1px}
+.rng{font-family:"JetBrains Mono","Anuphan",monospace;font-size:10.5px;color:var(--muted);margin-top:4px}
+
+/* แถวล่าง: กราฟ + สรุป */
+.tabs{display:flex;gap:4px;flex-wrap:wrap}
+.tab{border:1px solid var(--line);background:transparent;color:var(--ink-2);padding:3px 11px;font-family:"Anuphan",sans-serif;font-size:13px;cursor:pointer;line-height:1.6}
+.tab:hover{color:var(--red)}
+.tab[aria-selected="true"]{border-color:var(--red);color:var(--red);background:var(--red-wash)}
+.tab:focus-visible{outline:2px solid var(--red);outline-offset:1px}
+.chart-wrap{padding:12px 12px 0}
+#chart{width:100%;height:auto;display:block;cursor:crosshair}
+#chart text{font-family:"JetBrains Mono",monospace;font-size:11px;fill:var(--muted)}
+#chart text.hv{fill:var(--ink);font-size:12px}
+.cap{margin:0;padding:6px 16px 14px;font-size:12.5px;color:var(--muted)}
+.card-b{padding:14px 18px 18px}
+#summary{margin:0;font-size:14px;color:var(--ink);line-height:1.8}
+.adv{padding:10px 0 10px 12px;border-left:2px solid var(--line);margin-top:10px}
+.adv .h{font-family:"Bai Jamjuree","Anuphan",sans-serif;font-weight:600;font-size:14px}
+.adv .h sup{font-family:"JetBrains Mono",monospace;font-size:9.5px;color:var(--red);margin-left:4px}
+.adv .b{font-size:13px;color:var(--ink-2);margin-top:3px;line-height:1.75}
+.refs{margin-top:14px;padding-top:12px;border-top:1px solid var(--line-soft)}
+.refs .lbl{font-family:"JetBrains Mono",monospace;font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted)}
+.refs ol{margin:6px 0 0;padding-left:19px;font-size:11.5px;color:var(--muted);line-height:1.8}
+
+footer{
+  margin-top:36px;padding-top:16px;border-top:1px solid var(--line-soft);
+  font-family:"JetBrains Mono","Anuphan",monospace;font-size:10.5px;color:var(--muted);
+  display:flex;justify-content:space-between;gap:14px;flex-wrap:wrap;letter-spacing:.04em;
+}
+
+@media (max-width:1060px){
+  .cols{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .cols > .card:nth-child(3){grid-column:1 / -1}
+  .cols2{grid-template-columns:minmax(0,1fr)}
+}
+@media (max-width:680px){
+  .wrap{padding:0 14px 60px}
+  .cols{grid-template-columns:minmax(0,1fr)}
+  .media{min-height:300px}
+  .actions{width:100%}
+  .actions .btn,.actions .go{flex:1;justify-content:center}
 }
 @media (prefers-reduced-motion:reduce){
   *{transition-duration:.001ms !important;animation-duration:.001ms !important;animation-iteration-count:1 !important}
@@ -334,78 +304,117 @@ footer{
     </div>
   </div>
 
-  <div class="stage" id="heroStage">
-    <div class="ov">MediaPipe · 6 จุดฝั่งขวา · <b id="ovState">พร้อมใช้งาน</b></div>
-    <span class="scanbar"></span>
-    <canvas id="hero"></canvas>
-    <div class="stage-hint">ลากเพื่อหมุนมุมมอง</div>
-  </div>
-
-  <div class="panel">
-    <div class="panel-h"><div class="t">เงื่อนไขการถ่ายให้ผลแม่นที่สุด</div><div class="eyebrow">5 ข้อ</div></div>
-    <div class="panel-b">
-      <ul class="guide">
-        <li><span class="k">01</span><span>ตั้งกล้อง<b>นิ่ง</b> ถ่าย<b>ด้านข้าง</b> เห็น<b>ฝั่งขวา</b>ของผู้วิ่งชัดเจน</span></li>
-        <li><span class="k">02</span><span>เห็น<b>เต็มตัว</b> ตั้งแต่ศีรษะถึงเท้า ตลอดคลิป</span></li>
-        <li><span class="k">03</span><span>วิ่งบนลู่วิ่งต่อเนื่องอย่างน้อย <b>5 วินาที</b></span></li>
-        <li><span class="k">04</span><span>แสงสว่างเพียงพอ พื้นหลังไม่รกจนบังตัว</span></li>
-        <li><span class="k">05</span><span>ไฟล์ <b>.mp4 / .mov</b> ไม่เกิน <b>500MB</b> และ <b>60 วินาที</b></span></li>
-      </ul>
+  <div class="toolbar">
+    <div>
+      <h2>วิเคราะห์วิดีโอ</h2>
+      <p>อัปโหลดคลิปวิ่งที่ถ่ายจากด้านข้าง แล้วกด “เริ่มวิเคราะห์”</p>
+    </div>
+    <div class="actions">
+      <button class="btn" id="pickBtn" type="button">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 16V4M6 10l6-6 6 6M4 20h16"/></svg>
+        เลือกวิดีโอ
+      </button>
+      <button class="go" id="go" type="button" disabled>เริ่มวิเคราะห์</button>
+      <input type="file" id="fileInput" accept="video/mp4,video/quicktime,.mp4,.mov,.m4v">
     </div>
   </div>
 
-  <div class="panel">
-    <div class="panel-h"><div class="t">อัปโหลดคลิป</div><div class="eyebrow" id="upTag">รอไฟล์</div></div>
-    <div class="panel-b">
-      <div class="drop" id="drop">
-        <span class="cnr c1"></span><span class="cnr c2"></span><span class="cnr c3"></span><span class="cnr c4"></span>
-        <div class="lead">คลิกเพื่อเลือกไฟล์ หรือลากมาวางตรงนี้</div>
-        <div class="fname" id="fname"></div>
-      </div>
-      <input type="file" id="fileInput" accept="video/mp4,video/quicktime">
-      <button class="go" id="go" disabled>เริ่มวิเคราะห์</button>
+  <details class="guide-box" id="guide" open>
+    <summary>เงื่อนไขการถ่ายให้ผลแม่นที่สุด <span class="eyebrow" style="margin-left:auto">5 ข้อ</span></summary>
+    <ul class="guide">
+      <li><span class="k">01</span><span>ตั้งกล้อง<b>นิ่ง</b> ถ่าย<b>ด้านข้าง</b> เห็น<b>ฝั่งขวา</b>ของผู้วิ่งชัดเจน</span></li>
+      <li><span class="k">02</span><span>เห็น<b>เต็มตัว</b> ตั้งแต่ศีรษะถึงเท้า ตลอดคลิป</span></li>
+      <li><span class="k">03</span><span>วิ่งบนลู่วิ่งต่อเนื่องอย่างน้อย <b>5 วินาที</b></span></li>
+      <li><span class="k">04</span><span>แสงสว่างเพียงพอ พื้นหลังไม่รกจนบังตัว</span></li>
+      <li><span class="k">05</span><span>ไฟล์ <b>.mp4 / .mov</b> ไม่เกิน <b>500MB</b> และ <b>60 วินาที</b></span></li>
+    </ul>
+  </details>
 
-      <div class="prog hidden" id="prog">
-        <div class="ticks" id="ticks"></div>
-        <div class="prog-meta">
-          <span id="stage">—</span><span class="pc" id="pct">0%</span>
+  <div class="prog hidden" id="prog">
+    <div class="ticks" id="ticks"></div>
+    <div class="prog-meta"><span id="stage">—</span><span class="pc" id="pct">0%</span></div>
+  </div>
+
+  <div class="err hidden" id="err" role="alert"></div>
+
+  <div class="cols">
+    <!-- 1. วิดีโอต้นฉบับ -->
+    <article class="card">
+      <div class="card-h"><span class="num">1</span><h3 class="t">วิดีโอต้นฉบับ</h3><span class="eyebrow" id="upTag">รอไฟล์</span></div>
+      <div class="media" id="media1">
+        <div class="drop" id="drop" role="button" tabindex="0" aria-label="เลือกไฟล์วิดีโอ">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="1.5"/><path d="M10 9.5v5l4.2-2.5z"/></svg>
+          <div class="lead">ลากคลิปมาวางตรงนี้ หรือคลิกเพื่อเลือกไฟล์</div>
+          <div class="sub">.mp4 / .mov · ไม่เกิน 500MB · ไม่เกิน 60 วินาที</div>
+        </div>
+        <video id="vid" class="hidden" controls playsinline preload="auto"></video>
+        <div class="nop hidden" id="noPlay">
+          <b>เบราว์เซอร์นี้เปิดดูไฟล์นี้ไม่ได้</b>
+          <p>มักเป็นไฟล์ HEVC จากไอโฟน ไม่เป็นไร ยังกดวิเคราะห์ได้ตามปกติ และช่องที่ 2 จะแสดงโครงร่างที่ตรวจจับได้ให้ดูแทน</p>
         </div>
       </div>
-    </div>
-  </div>
+      <div class="card-f"><span class="fname" id="fname">ยังไม่ได้เลือกไฟล์</span></div>
+    </article>
 
-  <div class="err hidden" id="err"></div>
-
-  <div class="panel reveal hidden" id="rBox">
-    <div class="panel-h"><div class="t">ผลการวิเคราะห์</div><div class="eyebrow" id="rTag">—</div></div>
-    <div class="panel-b">
-      <div class="verdict">
-        <div class="vmark" id="vmark"></div>
-        <div class="vtext" id="vtext"></div>
+    <!-- 2. ตรวจจับท่าทาง -->
+    <article class="card">
+      <div class="card-h"><span class="num">2</span><h3 class="t">ตรวจจับท่าทาง</h3><span class="eyebrow" id="ovState">พร้อมใช้งาน</span></div>
+      <div class="media" id="media2">
+        <div class="stage" id="heroStage">
+          <span class="scanbar"></span>
+          <canvas id="hero"></canvas>
+          <div class="stage-hint">ลากเพื่อหมุนมุมมอง</div>
+        </div>
+        <canvas id="ov" class="hidden" aria-label="โครงร่างที่ตรวจจับได้ทับบนวิดีโอ"></canvas>
       </div>
-      <div class="score-row">
-        <div class="score-num" id="scoreNum">0</div>
-        <div class="score-of">/ 100 คะแนนท่าวิ่ง</div>
+      <div class="card-f">
+        <span id="p2note">ตัวอย่างโครงร่างจากชุดข้อมูล · หลังวิเคราะห์จะแสดงโครงร่างทับวิดีโอของคุณ</span>
+        <span class="pbar hidden" id="pbar">
+          <button class="btn sm" id="playBtn" type="button">เล่น</button>
+          <span class="mono" id="tRead">0:00 / 0:00</span>
+        </span>
       </div>
-      <div class="score-track"><div class="score-fill" id="scoreFill"></div><span class="pass"></span></div>
-      <div class="score-legend"><span>0</span><span class="mid">50 = เส้นแบ่ง ถูก / ผิด</span><span>100</span></div>
-      <div class="meta" id="meta"></div>
-      <div class="notice hidden" id="lowConf" role="note"></div>
-    </div>
+    </article>
+
+    <!-- 3. ผลการวิเคราะห์ -->
+    <article class="card">
+      <div class="card-h"><span class="num">3</span><h3 class="t">ผลการวิเคราะห์</h3><span class="eyebrow" id="rTag">—</span></div>
+      <div class="res-empty" id="rEmpty">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 16a8 8 0 0 1 16 0"/><path d="M12 16l3.5-4.5"/><circle cx="12" cy="16" r="1.3"/></svg>
+        <div>ผลการวิเคราะห์จะแสดงที่นี่<br>หลังเลือกวิดีโอและกด “เริ่มวิเคราะห์”</div>
+      </div>
+      <div class="res reveal hidden" id="rBox">
+        <svg id="gauge" viewBox="0 0 240 146" role="img" aria-label="มาตรวัดคะแนนท่าวิ่ง"></svg>
+        <div class="score-row"><div class="score-num" id="scoreNum">0</div><div class="score-of">/ 100</div></div>
+        <div class="verdict"><div class="vmark" id="vmark"></div><div class="vtext" id="vtext"></div></div>
+        <div class="meta" id="meta"></div>
+        <div class="notice hidden" id="lowConf" role="note"></div>
+        <div class="sub-h">มุมข้อต่อเทียบช่วงปกติของผู้วิ่งท่าถูก</div>
+        <div id="aList"></div>
+      </div>
+    </article>
   </div>
 
-  <div class="panel reveal hidden" id="aBox">
-    <div class="panel-h"><div class="t">มุมข้อต่อเทียบช่วงปกติ</div><div class="eyebrow">Top 3</div></div>
-    <div class="panel-b" id="aList"></div>
+  <div class="cols2 hidden" id="lower">
+    <article class="card">
+      <div class="card-h"><h3 class="t">มุมข้อต่อตามเวลา</h3><div class="tabs" role="tablist" id="tabs" aria-label="เลือกมุมข้อต่อ"></div></div>
+      <div class="chart-wrap"><svg id="chart" viewBox="0 0 800 250" role="img" aria-label="กราฟมุมข้อต่อตามเวลา"></svg></div>
+      <p class="cap" id="chartCap">แถบแรเงา = ช่วงปกติของผู้ที่วิ่งท่าถูก · เส้นแนวตั้ง = ตำแหน่งปัจจุบันของวิดีโอ · คลิกบนกราฟเพื่อข้ามไปช่วงนั้น</p>
+    </article>
+    <article class="card">
+      <div class="card-h"><h3 class="t">สรุปและคำแนะนำ</h3><span class="eyebrow">อ้างอิงงานวิจัย</span></div>
+      <div class="card-b">
+        <p id="summary"></p>
+        <div id="advList"></div>
+        <div class="refs hidden" id="refs"><div class="lbl">References</div><ol id="refList"></ol></div>
+      </div>
+    </article>
   </div>
 
-  <div class="panel reveal hidden" id="advBox">
-    <div class="panel-h"><div class="t">คำแนะนำเพื่อปรับท่าวิ่ง</div><div class="eyebrow">อ้างอิงงานวิจัย</div></div>
-    <div class="panel-b">
-      <div id="advList"></div>
-      <div class="refs"><div class="lbl">References</div><ol id="refList"></ol></div>
-    </div>
-  </div>
+  <footer>
+    <span>ต้นแบบงานวิจัย · ผลเป็นข้อมูลประกอบ ไม่ใช่การวินิจฉัยทางการแพทย์</span>
+    <span>MediaPipe Pose · Random Forest</span>
+  </footer>
 </div>
 
 <script id="heroData" type="application/json">[{"p":[[0.0,0.0],[0.002,-1.0],[0.189,0.682],[0.062,1.324],[-0.036,1.431],[0.318,1.486]],"a":[153.3,164.4,111.2,0.1]},{"p":[[0.0,0.0],[0.017,-1.0],[0.076,0.712],[-0.163,1.305],[-0.283,1.414],[0.249,1.438]],"a":[151.9,172.9,85.8,1.0]},{"p":[[0.0,0.0],[0.131,-0.991],[-0.078,0.725],[-0.371,1.264],[-0.485,1.352],[-0.155,1.455]],"a":[157.6,178.6,103.0,7.5]},{"p":[[0.0,0.0],[0.133,-0.991],[-0.142,0.699],[-0.545,1.171],[-0.66,1.199],[-0.466,1.454]],"a":[151.1,176.1,124.1,7.6]},{"p":[[0.0,0.0],[0.128,-0.992],[0.016,0.776],[-0.575,1.152],[-0.715,1.117],[-0.574,1.51]],"a":[121.3,171.5,122.3,7.3]},{"p":[[0.0,0.0],[0.083,-0.997],[0.219,0.745],[-0.333,1.166],[-0.448,1.226],[-0.183,1.494]],"a":[111.0,158.9,102.8,4.8]},{"p":[[0.0,0.0],[0.059,-0.998],[0.243,0.672],[0.074,1.269],[-0.016,1.366],[0.333,1.493]],"a":[144.3,156.7,115.2,3.4]},{"p":[[0.0,0.0],[0.048,-0.999],[0.202,0.671],[0.073,1.309],[-0.015,1.412],[0.324,1.508]],"a":[151.8,160.5,116.9,2.8]},{"p":[[0.0,0.0],[0.046,-0.999],[0.071,0.743],[-0.164,1.323],[-0.273,1.422],[0.168,1.47]],"a":[152.5,171.9,91.9,2.6]},{"p":[[0.0,0.0],[0.113,-0.994],[-0.03,0.732],[-0.348,1.27],[-0.467,1.362],[-0.124,1.477]],"a":[151.8,175.9,102.1,6.5]},{"p":[[0.0,0.0],[0.118,-0.993],[-0.175,0.692],[-0.556,1.182],[-0.665,1.224],[-0.444,1.481]],"a":[156.4,172.6,121.6,6.8]},{"p":[[0.0,0.0],[0.118,-0.993],[0.017,0.74],[-0.54,1.09],[-0.681,1.039],[-0.574,1.439]],"a":[120.9,171.9,127.8,6.8]},{"p":[[0.0,0.0],[0.068,-0.998],[0.3,0.759],[-0.317,1.141],[-0.448,1.135],[-0.276,1.47]],"a":[100.3,154.6,114.8,3.9]},{"p":[[0.0,0.0],[0.029,-1.0],[0.33,0.679],[0.074,1.259],[-0.032,1.326],[0.331,1.502]],"a":[130.3,152.4,109.6,1.6]},{"p":[[0.0,0.0],[0.015,-1.0],[0.264,0.678],[0.189,1.3],[0.109,1.396],[0.422,1.502]],"a":[151.8,157.9,124.0,0.8]},{"p":[[0.0,0.0],[-0.012,-1.0],[0.159,0.699],[-0.036,1.312],[-0.141,1.411],[0.262,1.438]],"a":[149.5,167.8,95.3,-0.7]},{"p":[[0.0,0.0],[0.07,-0.998],[0.054,0.709],[-0.254,1.269],[-0.376,1.362],[-0.013,1.422]],"a":[146.8,171.6,93.5,4.0]},{"p":[[0.0,0.0],[0.124,-0.992],[-0.146,0.712],[-0.493,1.221],[-0.586,1.276],[-0.34,1.462]],"a":[157.3,175.5,113.5,7.1]},{"p":[[0.0,0.0],[0.121,-0.993],[-0.137,0.72],[-0.626,1.154],[-0.748,1.138],[-0.663,1.474]],"a":[142.4,176.2,138.2,7.0]},{"p":[[0.0,0.0],[0.096,-0.995],[0.081,0.766],[-0.556,1.095],[-0.681,1.055],[-0.575,1.449]],"a":[111.3,168.5,120.5,5.5]},{"p":[[0.0,0.0],[0.09,-0.996],[0.277,0.698],[-0.21,1.168],[-0.317,1.234],[-0.017,1.525]],"a":[112.3,153.2,105.5,5.1]},{"p":[[0.0,0.0],[0.057,-0.998],[0.253,0.656],[0.2,1.257],[0.117,1.352],[0.48,1.495]],"a":[153.9,155.7,125.4,3.3]},{"p":[[0.0,0.0],[0.031,-1.0],[0.1,0.656],[0.058,1.334],[-0.038,1.437],[0.29,1.512]],"a":[167.7,169.5,123.9,1.8]},{"p":[[0.0,0.0],[0.032,-1.0],[0.071,0.697],[-0.197,1.278],[-0.313,1.387],[0.07,1.433]],"a":[149.5,172.4,95.4,1.8]},{"p":[[0.0,0.0],[0.127,-0.992],[-0.07,0.657],[-0.363,1.185],[-0.491,1.268],[-0.166,1.389]],"a":[157.0,178.8,106.9,7.3]},{"p":[[0.0,0.0],[0.136,-0.991],[-0.166,0.68],[-0.547,1.185],[-0.644,1.209],[-0.487,1.47]],"a":[156.7,174.1,131.0,7.8]},{"p":[[0.0,0.0],[0.114,-0.993],[-0.027,0.785],[-0.622,1.21],[-0.759,1.18],[-0.682,1.554]],"a":[127.6,175.5,135.5,6.5]},{"p":[[0.0,0.0],[0.048,-0.999],[0.196,0.713],[-0.394,1.098],[-0.537,1.096],[-0.43,1.449]],"a":[107.7,161.9,128.9,2.7]},{"p":[[0.0,0.0],[0.003,-1.0],[0.275,0.631],[0.021,1.168],[-0.083,1.236],[0.251,1.428]],"a":[131.2,156.3,113.2,0.2]},{"p":[[0.0,0.0],[-0.016,-1.0],[0.249,0.637],[0.19,1.227],[0.114,1.318],[0.455,1.446]],"a":[153.0,159.5,123.8,-0.9]},{"p":[[0.0,0.0],[-0.029,-1.0],[0.164,0.65],[0.114,1.216],[0.096,1.318],[0.228,1.378]],"a":[160.8,167.5,140.0,-1.6]},{"p":[[0.0,0.0],[0.064,-0.998],[0.063,0.695],[-0.201,1.229],[-0.313,1.317],[0.03,1.381]],"a":[148.5,171.2,97.0,3.7]},{"p":[[0.0,0.0],[0.139,-0.99],[-0.119,0.646],[-0.441,1.126],[-0.539,1.186],[-0.264,1.347]],"a":[156.6,177.5,107.4,8.0]},{"p":[[0.0,0.0],[0.147,-0.989],[-0.133,0.647],[-0.57,1.083],[-0.693,1.079],[-0.549,1.381]],"a":[146.5,176.8,131.0,8.4]},{"p":[[0.0,0.0],[0.127,-0.992],[0.063,0.775],[-0.569,1.122],[-0.713,1.074],[-0.59,1.489]],"a":[114.1,168.1,122.0,7.3]},{"p":[[0.0,0.0],[0.118,-0.993],[0.218,0.734],[-0.301,1.156],[-0.435,1.246],[-0.118,1.508]],"a":[112.5,156.6,101.6,6.8]},{"p":[[0.0,0.0],[0.067,-0.998],[0.245,0.66],[0.112,1.213],[0.029,1.311],[0.383,1.444]],"a":[146.2,155.8,117.0,3.9]},{"p":[[0.0,0.0],[0.047,-0.999],[0.208,0.685],[0.094,1.301],[0.006,1.401],[0.358,1.494]],"a":[152.6,160.4,115.8,2.7]},{"p":[[0.0,0.0],[0.045,-0.999],[0.103,0.7],[-0.113,1.25],[-0.233,1.358],[0.29,1.4]],"a":[150.2,169.0,88.9,2.6]},{"p":[[0.0,0.0],[0.139,-0.99],[-0.048,0.692],[-0.358,1.2],[-0.476,1.279],[-0.142,1.386]],"a":[152.6,176.0,99.2,8.0]},{"p":[[0.0,0.0],[0.174,-0.985],[-0.16,0.667],[-0.556,1.129],[-0.659,1.16],[-0.459,1.406]],"a":[152.8,176.6,120.2,10.0]},{"p":[[0.0,0.0],[0.143,-0.99],[-0.073,0.707],[-0.633,1.075],[-0.767,1.038],[-0.694,1.408]],"a":[129.3,177.7,133.6,8.2]},{"p":[[0.0,0.0],[0.099,-0.995],[0.147,0.776],[-0.498,1.124],[-0.63,1.102],[-0.529,1.485]],"a":[107.6,163.6,123.2,5.7]},{"p":[[0.0,0.0],[0.052,-0.999],[0.249,0.704],[-0.088,1.218],[-0.232,1.295],[0.118,1.5]],"a":[127.3,157.6,110.7,3.0]},{"p":[[0.0,0.0],[0.029,-1.0],[0.216,0.689],[0.164,1.277],[0.071,1.375],[0.42,1.507]],"a":[157.5,160.9,126.8,1.6]},{"p":[[0.0,0.0],[0.017,-1.0],[0.17,0.671],[-0.04,1.295],[-0.148,1.396],[0.204,1.46]],"a":[147.3,164.8,105.6,1.0]},{"p":[[0.0,0.0],[0.093,-0.996],[0.042,0.701],[-0.262,1.243],[-0.372,1.325],[-0.012,1.421]],"a":[147.3,171.3,96.2,5.3]},{"p":[[0.0,0.0],[0.139,-0.99],[-0.139,0.659],[-0.467,1.151],[-0.563,1.192],[-0.328,1.401]],"a":[158.2,176.1,117.1,8.0]},{"p":[[0.0,0.0],[0.126,-0.992],[-0.19,0.677],[-0.632,1.116],[-0.76,1.097],[-0.641,1.443]],"a":[150.4,171.6,136.5,7.2]},{"p":[[0.0,0.0],[0.126,-0.992],[-0.03,0.736],[-0.648,1.063],[-0.781,1.021],[-0.673,1.412]],"a":[120.2,175.1,122.1,7.2]},{"p":[[0.0,0.0],[0.088,-0.996],[0.14,0.709],[-0.365,1.096],[-0.483,1.144],[-0.224,1.414]],"a":[116.2,163.8,103.4,5.1]},{"p":[[0.0,0.0],[0.051,-0.999],[0.185,0.707],[0.049,1.294],[-0.04,1.387],[0.309,1.511]],"a":[152.3,162.4,116.9,2.9]},{"p":[[0.0,0.0],[0.034,-0.999],[0.146,0.694],[0.075,1.315],[-0.024,1.42],[0.333,1.503]],"a":[161.7,166.2,119.7,2.0]},{"p":[[0.0,0.0],[0.06,-0.998],[0.143,0.694],[-0.081,1.3],[-0.197,1.409],[0.267,1.449]],"a":[148.1,164.9,92.8,3.5]},{"p":[[0.0,0.0],[0.118,-0.993],[-0.04,0.686],[-0.323,1.243],[-0.425,1.33],[-0.104,1.439]],"a":[156.3,176.5,104.8,6.8]},{"p":[[0.0,0.0],[0.128,-0.992],[-0.146,0.666],[-0.497,1.152],[-0.595,1.189],[-0.406,1.431]],"a":[156.5,175.0,126.2,7.3]},{"p":[[0.0,0.0],[0.113,-0.994],[-0.06,0.726],[-0.571,1.13],[-0.694,1.096],[-0.68,1.442]],"a":[133.1,178.2,147.7,6.5]},{"p":[[0.0,0.0],[0.061,-0.998],[0.132,0.731],[-0.471,1.089],[-0.612,1.064],[-0.522,1.456]],"a":[110.5,166.3,128.6,3.5]},{"p":[[0.0,0.0],[0.048,-0.999],[0.265,0.611],[-0.105,1.12],[-0.265,1.187],[0.106,1.426]],"a":[120.5,153.8,109.3,2.8]},{"p":[[0.0,0.0],[0.026,-1.0],[0.239,0.637],[0.178,1.224],[0.094,1.315],[0.444,1.451]],"a":[153.5,157.9,124.6,1.5]},{"p":[[0.0,0.0],[0.019,-1.0],[0.158,0.688],[0.021,1.348],[-0.087,1.446],[0.262,1.507]],"a":[155.3,166.0,111.6,1.1]},{"p":[[0.0,0.0],[0.082,-0.997],[0.076,0.724],[-0.209,1.327],[-0.321,1.43],[0.054,1.501]],"a":[148.8,169.3,98.2,4.7]},{"p":[[0.0,0.0],[0.138,-0.991],[-0.125,0.696],[-0.436,1.203],[-0.548,1.27],[-0.235,1.429]],"a":[158.8,177.7,106.8,7.9]},{"p":[[0.0,0.0],[0.154,-0.988],[-0.165,0.69],[-0.593,1.159],[-0.707,1.17],[-0.554,1.464]],"a":[151.1,175.4,130.4,8.8]},{"p":[[0.0,0.0],[0.125,-0.992],[0.053,0.784],[-0.593,1.138],[-0.728,1.08],[-0.662,1.499]],"a":[114.8,169.0,129.5,7.2]},{"p":[[0.0,0.0],[0.085,-0.996],[0.234,0.753],[-0.332,1.127],[-0.461,1.11],[-0.28,1.458]],"a":[106.3,157.9,114.6,4.9]},{"p":[[0.0,0.0],[0.068,-0.998],[0.248,0.656],[0.075,1.199],[-0.013,1.268],[0.328,1.45]],"a":[141.6,155.4,117.1,3.9]},{"p":[[0.0,0.0],[0.033,-0.999],[0.199,0.637],[0.141,1.219],[0.054,1.314],[0.403,1.427]],"a":[156.9,160.7,122.8,1.9]},{"p":[[0.0,0.0],[0.019,-1.0],[0.156,0.681],[-0.03,1.257],[-0.16,1.369],[0.217,1.416]],"a":[149.1,166.0,105.0,1.1]},{"p":[[0.0,0.0],[0.134,-0.991],[0.03,0.684],[-0.273,1.245],[-0.385,1.341],[-0.061,1.406]],"a":[149.1,169.7,99.0,7.7]},{"p":[[0.0,0.0],[0.159,-0.987],[-0.147,0.661],[-0.497,1.182],[-0.594,1.22],[-0.368,1.428]],"a":[158.6,176.6,118.5,9.2]},{"p":[[0.0,0.0],[0.137,-0.991],[-0.126,0.686],[-0.614,1.113],[-0.743,1.091],[-0.644,1.432]],"a":[141.5,177.5,136.5,7.9]},{"p":[[0.0,0.0],[0.08,-0.997],[0.07,0.765],[-0.613,1.116],[-0.731,1.081],[-0.534,1.487]],"a":[112.0,170.2,105.1,4.6]},{"p":[[0.0,0.0],[0.066,-0.998],[0.247,0.7],[-0.183,1.249],[-0.316,1.325],[0.057,1.563]],"a":[122.5,156.7,104.5,3.8]},{"p":[[0.0,0.0],[0.04,-0.999],[0.24,0.659],[0.186,1.251],[0.112,1.345],[0.455,1.446]],"a":[154.7,157.7,120.6,2.3]},{"p":[[0.0,0.0],[0.028,-1.0],[0.188,0.656],[0.021,1.276],[-0.083,1.362],[0.261,1.456]],"a":[148.9,162.4,111.9,1.6]},{"p":[[0.0,0.0],[0.075,-0.997],[0.072,0.684],[-0.185,1.213],[-0.306,1.306],[0.068,1.381]],"a":[148.1,169.7,97.7,4.3]},{"p":[[0.0,0.0],[0.155,-0.988],[-0.094,0.663],[-0.401,1.118],[-0.493,1.175],[-0.216,1.324]],"a":[154.1,179.2,104.2,8.9]},{"p":[[0.0,0.0],[0.17,-0.986],[-0.181,0.649],[-0.581,1.06],[-0.683,1.074],[-0.511,1.342]],"a":[151.4,174.2,121.8,9.8]},{"p":[[0.0,0.0],[0.156,-0.988],[-0.014,0.735],[-0.667,1.062],[-0.793,1.016],[-0.687,1.413]],"a":[117.7,172.1,119.9,9.0]},{"p":[[0.0,0.0],[0.131,-0.991],[0.195,0.737],[-0.364,1.085],[-0.524,1.08],[-0.314,1.44]],"a":[107.1,157.6,113.7,7.6]},{"p":[[0.0,0.0],[0.069,-0.998],[0.265,0.664],[0.026,1.222],[-0.075,1.296],[0.283,1.446]],"a":[135.0,154.2,107.9,4.0]},{"p":[[0.0,0.0],[0.029,-1.0],[0.221,0.666],[0.14,1.256],[0.063,1.359],[0.421,1.446]],"a":[153.9,160.0,116.3,1.7]},{"p":[[0.0,0.0],[0.015,-1.0],[0.184,0.655],[0.002,1.252],[-0.02,1.372],[0.191,1.409]],"a":[147.3,163.4,112.7,0.9]},{"p":[[0.0,0.0],[0.086,-0.996],[-0.004,0.687],[-0.328,1.238],[-0.427,1.34],[-0.098,1.409]],"a":[149.8,175.3,96.1,5.0]},{"p":[[0.0,0.0],[0.127,-0.992],[-0.198,0.695],[-0.568,1.182],[-0.679,1.224],[-0.441,1.454]],"a":[158.7,171.4,117.6,7.3]},{"p":[[0.0,0.0],[0.106,-0.994],[-0.161,0.73],[-0.713,1.121],[-0.839,1.111],[-0.685,1.468]],"a":[137.7,173.7,120.7,6.1]},{"p":[[0.0,0.0],[0.049,-0.999],[0.105,0.742],[-0.544,1.139],[-0.691,1.138],[-0.681,1.492]],"a":[113.5,169.2,142.8,2.8]},{"p":[[0.0,0.0],[0.018,-1.0],[0.217,0.68],[-0.075,1.241],[-0.212,1.325],[0.158,1.525]],"a":[134.7,161.3,113.1,1.0]},{"p":[[0.0,0.0],[0.02,-1.0],[0.207,0.676],[0.175,1.263],[0.1,1.362],[0.447,1.477]],"a":[159.8,161.8,124.9,1.1]}]</script>
@@ -416,14 +425,15 @@ var $ = function(id){ return document.getElementById(id); };
 
 /* ---------------- theme ---------------- */
 var root = document.documentElement;
-/* ผู้ใช้ตั้งค่าลดการเคลื่อนไหวไว้ไหม — countTo() ใช้ตัวนี้ ต้องประกาศไว้บนสุดก่อนโค้ดส่วนอื่นอ้างถึง
-   (เคยไม่ได้ประกาศเลย ทำให้ countTo() โยน ReferenceError ตอนแสดงผล จนรายละเอียดมุม/คำแนะนำไม่ขึ้น) */
+/* ผู้ใช้ตั้งค่าลดการเคลื่อนไหวไว้ไหม — ต้องประกาศไว้บนสุดก่อนโค้ดส่วนอื่นอ้างถึง */
 var reduced = !!(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches);
+function tok(n){ return getComputedStyle(root).getPropertyValue(n).trim(); }
 function setTheme(t){
   root.setAttribute('data-theme', t);
   $('thDark').setAttribute('aria-pressed', String(t === 'dark'));
   $('thLight').setAttribute('aria-pressed', String(t === 'light'));
   try{ localStorage.setItem('gait-theme', t); }catch(e){}
+  if(typeof drawOverlay === 'function') drawOverlay();
 }
 try{
   var saved = localStorage.getItem('gait-theme');
@@ -433,7 +443,7 @@ $('thDark').addEventListener('click', function(){ setTheme('dark'); });
 $('thLight').addEventListener('click', function(){ setTheme('light'); });
 
 /* ---------------- hero 3D: โครงร่างจากพิกัดจริงในชุดข้อมูล (คลิป Tnot) ----------------
-   ซิงก์กับสถานะระบบวิเคราะห์: idle -> busy (ตอนประมวลผล) -> correct/incorrect (ตอนได้ผล) */
+   แสดงในช่องที่ 2 ก่อนมีผลวิเคราะห์ ซิงก์กับสถานะ: idle -> busy -> correct/incorrect */
 var heroState = 'idle';
 function setHeroState(s){ heroState = s; }
 
@@ -443,7 +453,7 @@ try{
   if(!window.THREE || !canvas){ return; }   // ถ้า CDN โหลดไม่ได้ ก็แค่ไม่มีภาพ 3D ไม่พังทั้งหน้า
 
   var FRAMES = JSON.parse($('heroData').textContent);
-  var BONES = [[0,1],[0,2],[2,3],[3,4],[4,5],[3,5]];  /* สะโพก-ไหล่, สะโพก-เข่า, เข่า-ข้อเท้า, ข้อเท้า-ส้น, ส้น-ปลายเท้า, ข้อเท้า-ปลายเท้า */
+  var BONES = [[0,1],[0,2],[2,3],[3,4],[4,5],[3,5]];
   var NPT = 6, YOFF = 0.28, GHOSTS = 6;
 
   var renderer = new THREE.WebGLRenderer({canvas:canvas, antialias:true, alpha:true});
@@ -458,7 +468,6 @@ try{
   var rimLight = new THREE.DirectionalLight(0xff4455, 0.6); rimLight.position.set(-5, 1, -4);
   scene.add(keyLight, rimLight);
 
-  function tok(n){ return getComputedStyle(root).getPropertyValue(n).trim(); }
   var colHero = new THREE.Color(tok('--ink') || '#f6f0ee');
   var colAccent = new THREE.Color(tok('--red') || '#ff2e3f');
 
@@ -546,7 +555,6 @@ try{
   }
   window.addEventListener('resize', resize);
 
-  /* สลับธีมแล้วสีต้องตามไปด้วย */
   function syncTheme(){
     colHero.set(tok('--ink') || '#f6f0ee');
     colAccent.set(tok('--red') || '#ff2e3f');
@@ -556,23 +564,18 @@ try{
   new MutationObserver(syncTheme).observe(root, {attributes:true, attributeFilter:['data-theme']});
 
   var t = 0, acc = 0, last = performance.now();
-  /* อ่านค่าเองตรงนี้ ห้ามอ้างตัวแปร `reduced` ของสคริปต์ส่วนล่าง — ตัวนั้นประกาศทีหลังโค้ดนี้
-     จึงยังไม่มีตอนโค้ดนี้รัน ทำให้เกิด ReferenceError ถูก catch ข้างล่างเงียบๆ แล้วฉาก 3D ว่างเปล่า
-     (เจอจริงบนเว็บที่ deploy แล้ว: เห็นแค่ตาราง ไม่มีโครงร่างนักวิ่ง) */
   var reducedMotion = !!(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches);
 
   function loop(now){
     var dt = now - last; last = now;
-
-    /* ความเร็วเล่นซิงก์กับสถานะ: ปกติ 10fps (เท่าอัตราสุ่มเฟรมจริง), เร่งตอนประมวลผล */
+    /* ช่อง 2 เปลี่ยนเป็นโครงร่างทับวิดีโอแล้ว → ไม่ต้องเรนเดอร์ฉาก 3D ที่ซ่อนอยู่ */
+    if(stageEl.offsetParent === null){ requestAnimationFrame(loop); return; }
     var step = heroState === 'busy' ? 45 : 100;
     if(!reducedMotion){
       acc += dt;
       while(acc >= step){ acc -= step; t = (t + 1) % FRAMES.length; }
-      if(!userDrag){ az += dt * 0.00006; applyCam(); }   /* หมุนเองช้าๆ จนกว่าผู้ใช้จะลากเอง */
+      if(!userDrag){ az += dt * 0.00006; applyCam(); }
     }
-
-    /* สีตามสถานะ: busy=แดงทั้งตัว, incorrect=แดง, correct/idle=สีหลัก */
     var heroCol = (heroState === 'busy' || heroState === 'incorrect') ? colAccent : colHero;
     matBone.color.copy(heroCol);
     matJoint.emissiveIntensity = heroState === 'busy' ? (.55 + .35*Math.sin(now/120)) : .5;
@@ -583,7 +586,6 @@ try{
       var gi = (t - ghosts[i].lag + FRAMES.length * 4) % FRAMES.length;
       pose(ghosts[i].g, FRAMES[gi]);
     }
-
     renderer.render(scene, camera);
     requestAnimationFrame(loop);
   }
@@ -591,14 +593,13 @@ try{
   resize(); applyCam(); syncTheme();
   requestAnimationFrame(loop);
 }catch(e){
-  /* กันโค้ด 3D พังแล้วลากทั้งหน้าเว็บลงไปด้วย (เช่น เบราว์เซอร์ไม่รองรับ WebGL) —
-     ถ้าเกิด error ตรงนี้ อย่างน้อยปุ่มอัปโหลด/วิเคราะห์ต้องยังใช้งานได้ปกติ */
+  /* กันโค้ด 3D พังแล้วลากทั้งหน้าเว็บลงไปด้วย — ปุ่มอัปโหลด/วิเคราะห์ต้องยังใช้งานได้ปกติ */
   console.error('โครงร่าง 3D โหลดไม่สำเร็จ:', e);
 }
 })();
 
 /* ---------------- ticks ---------------- */
-var NTICK = 42, tickEls = [];
+var NTICK = 48, tickEls = [];
 (function(){
   var box = $('ticks'), html = '';
   for(var i = 0; i < NTICK; i++) html += '<i></i>';
@@ -619,72 +620,97 @@ function uploadWithProgress(url, form){
   return new Promise(function(resolve, reject){
     var xhr = new XMLHttpRequest();
     xhr.open('POST', url);
-
     xhr.upload.onprogress = function(e){
       if(!e.lengthComputable) return;
       var pct = e.loaded / e.total * 100;
-      /* กันแถบกระโดดถึง 100% ตั้งแต่ยังไม่เริ่มวิเคราะห์ — ให้ช่วงอัปโหลดกินแค่ 0-40% ของแถบ
-         ที่เหลือเป็นของขั้นตอนประมวลผลจริงซึ่ง server เป็นคนรายงานผ่าน /api/status */
-      setProgress(pct * 0.4);
+      setProgress(pct * 0.4);   /* อัปโหลด = 0-40% ของแถบ ที่เหลือเป็นขั้นตอนประมวลผลบนเซิร์ฟเวอร์ */
       $('stage').textContent = pct < 100
         ? 'กำลังอัปโหลด… ' + (e.loaded / 1048576).toFixed(0) + '/' + (e.total / 1048576).toFixed(0) + ' MB'
         : 'อัปโหลดครบแล้ว กำลังรอเซิร์ฟเวอร์รับงาน…';
     };
-
     xhr.onload = function(){
       var j = null;
       try { j = JSON.parse(xhr.responseText); } catch(e){}
       if(xhr.status >= 200 && xhr.status < 300 && j && j.job_id) resolve(j);
       else reject(new Error((j && j.detail) || ('อัปโหลดล้มเหลว (HTTP ' + xhr.status + ')')));
     };
-    xhr.onerror = function(){
-      reject(new Error('ส่งไฟล์ไม่สำเร็จ — เน็ตหลุดกลางทาง หรือไฟล์ใหญ่เกินที่เซิร์ฟเวอร์รับไหว'));
-    };
+    xhr.onerror = function(){ reject(new Error('ส่งไฟล์ไม่สำเร็จ — เน็ตหลุดกลางทาง หรือไฟล์ใหญ่เกินที่เซิร์ฟเวอร์รับไหว')); };
     xhr.ontimeout = function(){ reject(new Error('ส่งไฟล์นานเกินกำหนด')); };
-
     xhr.send(form);
   });
 }
 
-var drop = $('drop'), fileInput = $('fileInput'), go = $('go'), file = null;
+var fileInput = $('fileInput'), go = $('go'), vid = $('vid'), drop = $('drop'), media1 = $('media1');
+var file = null, fileURL = null, videoOk = false, TL = null, RESULT = null;
 
+$('pickBtn').addEventListener('click', function(){ fileInput.click(); });
 drop.addEventListener('click', function(){ fileInput.click(); });
-drop.addEventListener('dragover', function(e){ e.preventDefault(); drop.classList.add('on'); });
-drop.addEventListener('dragleave', function(){ drop.classList.remove('on'); });
-drop.addEventListener('drop', function(e){
-  e.preventDefault(); drop.classList.remove('on');
+drop.addEventListener('keydown', function(e){ if(e.key === 'Enter' || e.key === ' '){ e.preventDefault(); fileInput.click(); } });
+media1.addEventListener('dragover', function(e){ e.preventDefault(); media1.classList.add('on'); });
+media1.addEventListener('dragleave', function(){ media1.classList.remove('on'); });
+media1.addEventListener('drop', function(e){
+  e.preventDefault(); media1.classList.remove('on');
   if(e.dataTransfer.files.length) pick(e.dataTransfer.files[0]);
 });
-fileInput.addEventListener('change', function(){ if(fileInput.files.length) pick(fileInput.files[0]); });
+fileInput.addEventListener('change', function(){ if(fileInput.files.length) pick(fileInput.files[0]); fileInput.value = ''; });
 
 function pick(f){
   file = f;
+  if(fileURL) URL.revokeObjectURL(fileURL);
+  fileURL = URL.createObjectURL(f);
+  videoOk = false;
+  $('noPlay').classList.add('hidden');
+  drop.classList.add('hidden');
+  vid.classList.remove('hidden');
+  vid.src = fileURL;
+  vid.load();
   $('fname').textContent = f.name + '  ·  ' + (f.size / 1048576).toFixed(1) + ' MB';
   $('upTag').textContent = 'พร้อมวิเคราะห์';
   go.disabled = false;
-  setHeroState('idle');                        /* เลือกไฟล์ใหม่ = ล้างสถานะผลเดิมออกจากฉาก 3D */
-  $('ovState').textContent = 'พร้อมใช้งาน';
   hideResults();
+  setHeroState('idle');
+  $('ovState').textContent = 'พร้อมใช้งาน';
 }
+
+vid.addEventListener('loadeddata', function(){ videoOk = true; if(TL) drawOverlay(); });
+vid.addEventListener('error', function(){
+  if(!file) return;
+  videoOk = false;
+  vid.classList.add('hidden');
+  $('noPlay').classList.remove('hidden');
+  if(TL){ drawOverlay(); }
+});
+vid.addEventListener('play', function(){ updatePlayLabel(); startLoop(); });
+vid.addEventListener('pause', function(){ updatePlayLabel(); drawOverlay(); });
+vid.addEventListener('seeked', function(){ drawOverlay(); });
+/* หลัง seek บางครั้งภาพเฟรมใหม่ยังถอดรหัสไม่เสร็จตอน 'seeked' → วาดซ้ำเมื่อพร้อมจริง */
+vid.addEventListener('canplay', function(){ if(!looping) drawOverlay(); });
+vid.addEventListener('timeupdate', function(){ if(!looping) drawOverlay(); });
+vid.addEventListener('ended', function(){ updatePlayLabel(); });
+
 function hideResults(){
-  ['err','rBox','aBox','advBox'].forEach(function(id){
-    var el = $(id); el.classList.add('hidden'); el.classList.remove('in');
-  });
+  $('err').classList.add('hidden');
+  $('lowConf').classList.add('hidden');
+  $('rBox').classList.add('hidden'); $('rBox').classList.remove('in');
+  $('rEmpty').classList.remove('hidden');
+  $('lower').classList.add('hidden');
+  $('rTag').textContent = '—';
+  TL = null; RESULT = null; fbPlaying = false; fbTime = 0;
+  showOverlay(false);
 }
-function showError(msg){
-  var e = $('err'); e.textContent = '✕  ' + msg; e.classList.remove('hidden');
-}
+function showError(msg){ var e = $('err'); e.textContent = '✕  ' + msg; e.classList.remove('hidden'); }
 
 go.addEventListener('click', function(){
   if(!file) return;
   hideResults();
-  go.disabled = true;
-  $('heroStage').classList.add('busy');
+  go.disabled = true; $('pickBtn').disabled = true;
+  $('media2').classList.add('busy');
   setHeroState('busy');
   $('ovState').textContent = 'กำลังประมวลผล';
   $('prog').classList.remove('hidden');
   setProgress(0);
   $('stage').textContent = 'กำลังอัปโหลด…';
+  $('guide').open = false;
 
   var form = new FormData();
   form.append('file', file);
@@ -695,23 +721,19 @@ go.addEventListener('click', function(){
       $('prog').classList.add('hidden');
     })
     .then(function(){
-      go.disabled = false;
-      $('heroStage').classList.remove('busy');
-      /* ถ้าได้ผลแล้ว render() ตั้งสถานะ+ป้ายกำกับไว้แล้ว ห้ามรีเซ็ตทับ (ไม่งั้นผลจะหายไปทันที) */
-      if(heroState === 'busy'){
-        setHeroState('idle');
-        $('ovState').textContent = 'พร้อมใช้งาน';
-      }
+      go.disabled = false; $('pickBtn').disabled = false;
+      $('media2').classList.remove('busy');
+      /* ถ้าได้ผลแล้ว render() ตั้งสถานะไว้แล้ว ห้ามรีเซ็ตทับ */
+      if(heroState === 'busy'){ setHeroState('idle'); $('ovState').textContent = 'พร้อมใช้งาน'; }
     });
 });
 
 function poll(jobId){
   return fetch('/api/status/' + jobId).then(function(res){
-    if(!res.ok) throw new Error('เช็คสถานะไม่ได้ (job หมดอายุหรือเซิร์ฟเวอร์รีสตาร์ท)');
+    if(!res.ok) throw new Error('เช็คสถานะไม่ได้ (job หมดอายุหรือเซิร์ฟเวอร์รีสตาร์ท) — กด “เริ่มวิเคราะห์” อีกครั้ง');
     return res.json();
   }).then(function(s){
-    /* ต่อช่วงจากแถบอัปโหลด (0-40%) ไม่ใช่เริ่มนับใหม่ ไม่งั้นแถบจะถอยหลังกลับไป 0% */
-    setProgress(40 + s.progress * 0.6);
+    setProgress(40 + s.progress * 0.6);   /* ต่อจากช่วงอัปโหลด ไม่ให้แถบถอยหลัง */
     $('stage').textContent = s.stage;
     if(s.status === 'done'){
       return fetch('/api/result/' + jobId).then(function(r){ return r.json(); })
@@ -727,29 +749,16 @@ function poll(jobId){
 }
 
 /* ---------------- render ---------------- */
-function reveal(el, delay){
-  el.classList.remove('hidden');
-  setTimeout(function(){ el.classList.add('in'); }, delay);
-}
+function reveal(el, delay){ el.classList.remove('hidden'); setTimeout(function(){ el.classList.add('in'); }, delay); }
+function esc(s){ return String(s).replace(/[&<>"]/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]; }); }
+
 function countTo(el, target, ms){
-  /* บั๊กที่เจอซ้ำสองรอบ: การพึ่งพา requestAnimationFrame/setTimeout เพื่อ 'ตั้งค่าที่ถูกต้อง
-     ในภายหลัง' เสี่ยงเสมอ — ถ้าตัวจับเวลาไม่ทำงานตามคาด (แท็บถูกสลับออก, throttle, ฯลฯ)
-     เลขจะค้างผิดค่า ทั้งที่ผลลัพธ์จริงถูกต้องอยู่แล้ว แก้ให้ขาดจากปัญหานี้ถาวร: ตั้งค่าที่ถูกต้อง
-     "ทันทีแบบ synchronous" ก่อนเสมอ ไม่รอ timer ใดๆ ทั้งสิ้น ส่วนแอนิเมชันนับขึ้นเป็นแค่ลูกเล่น
-     เสริมที่วาดทับในเฟรมถัดไป — ถ้าไม่ทำงานเลยก็ไม่กระทบความถูกต้อง เพราะค่าถูกต้องอยู่แล้ว */
+  /* ตั้งค่าที่ถูกต้องแบบ synchronous ก่อนเสมอ แอนิเมชันเป็นแค่ลูกเล่น — เคยเจอเลขค้างผิดค่า (0, -471, 6)
+     จากการพึ่ง requestAnimationFrame: ห้ามเรียก step() ทันที, นับเวลาจากเฟรมแรกเอง, clamp k,
+     ข้ามแอนิเมชันถ้าแท็บซ่อนอยู่ และ fallback ตั้ง done กันเฟรมที่มาช้าเขียนทับ */
   var finalVal = Math.round(target);
   el.textContent = finalVal;
-  /* แท็บถูกซ่อนอยู่ตอนผลออก (ผู้ใช้สลับไปทำอย่างอื่นระหว่างรอ 2-3 นาที) → ไม่ต้องเล่นแอนิเมชัน
-     ไม่งั้นพอกลับมาที่แท็บ เฟรมแรกจะเริ่มนับใหม่จาก 0 ทับเลขที่ถูกต้องที่แสดงอยู่แล้ว */
   if(reduced || document.hidden) return;
-
-  /* จุดสำคัญ: ห้ามเรียก step() แบบ synchronous ทันที เพราะเฟรมแรก (k=0) จะคำนวณได้ 0 แล้ว
-     เขียนทับค่าที่ถูกต้องที่เพิ่งตั้งไว้ข้างบนทันที (คือบั๊กที่เจอไปแล้วรอบก่อน) ต้องส่งผ่าน
-     requestAnimationFrame เท่านั้น ให้ค่าที่ถูกต้องคงอยู่จนกว่าเฟรมแรกของแอนิเมชันจะทำงานจริง */
-  /* เริ่มนับเวลาจากเฟรมแรกของแอนิเมชันเอง ไม่ใช่ performance.now() ตอนเรียกฟังก์ชัน —
-     timestamp ที่ requestAnimationFrame ส่งมาคือ "เวลาเริ่มเฟรม" ซึ่งอาจเก่ากว่าตอนเรียก
-     ทำให้ k ติดลบ แล้วสูตร easing ขยายเป็นเลขติดลบก้อนใหญ่ (ทดสอบจริงเห็น -471 แทน 72)
-     และถ้าเฟรมหยุดทำงานพอดี (สลับแท็บ/throttle) เลขติดลบนั้นจะค้างอยู่บนจอ */
   var t0 = null, done = false;
   function step(now){
     if(done){ el.textContent = finalVal; return; }
@@ -760,96 +769,318 @@ function countTo(el, target, ms){
     if(k < 1) requestAnimationFrame(step); else done = true;
   }
   requestAnimationFrame(step);
-  /* กันเหนียว: หมดเวลาแอนิเมชันแล้วต้องจบที่ค่าจริง และตั้ง done ไว้ด้วย — เฟรมที่มาช้า
-     (เบราว์เซอร์เพิ่งเริ่มวาดทีหลัง) จะได้ไม่เริ่มนับใหม่ทับเลขที่ถูกต้อง
-     (ทดสอบจริง: เฟรมแรกมาหลัง fallback แล้วเขียน "6" ทับค่า 49 ที่ถูกต้อง) */
   setTimeout(function(){ done = true; el.textContent = finalVal; }, ms + 250);
 }
 
+function drawGauge(score, ok){
+  var cx = 120, cy = 118, r = 92;
+  function pt(v, rr){ var a = Math.PI * (1 - v / 100); return [cx + rr * Math.cos(a), cy - rr * Math.sin(a)]; }
+  function arc(v0, v1, rr){
+    var a = pt(v0, rr), b = pt(v1, rr);
+    return 'M' + a[0].toFixed(1) + ' ' + a[1].toFixed(1) + ' A' + rr + ' ' + rr + ' 0 0 1 ' + b[0].toFixed(1) + ' ' + b[1].toFixed(1);
+  }
+  var v = Math.max(0, Math.min(100, score));
+  var col = ok ? 'var(--ok)' : 'var(--red)';
+  var n = pt(v, r - 26), m1 = pt(50, r + 11), m2 = pt(50, r - 11);
+  $('gauge').innerHTML =
+    '<path d="' + arc(0, 100, r) + '" fill="none" stroke="var(--surface-2)" stroke-width="14" stroke-linecap="round"/>' +
+    (v > 0.5 ? '<path d="' + arc(0, v, r) + '" fill="none" stroke="' + col + '" stroke-width="14" stroke-linecap="round"/>' : '') +
+    '<line x1="' + m1[0] + '" y1="' + m1[1] + '" x2="' + m2[0] + '" y2="' + m2[1] + '" stroke="var(--ink-2)" stroke-width="1.5"/>' +
+    '<line x1="' + cx + '" y1="' + cy + '" x2="' + n[0].toFixed(1) + '" y2="' + n[1].toFixed(1) + '" stroke="var(--ink)" stroke-width="3" stroke-linecap="round"/>' +
+    '<circle cx="' + cx + '" cy="' + cy + '" r="6.5" fill="var(--ink)"/>' +
+    '<text x="28" y="140" text-anchor="middle">0</text>' +
+    '<text x="212" y="140" text-anchor="middle">100</text>' +
+    '<text x="120" y="10" text-anchor="middle">50 = เส้นแบ่ง ถูก / ผิด</text>';
+}
+
 function render(d){
+  RESULT = d;
   var ok = d.predicted_class === 'correct';
-
-  setHeroState(ok ? 'correct' : 'incorrect');   /* โครงร่าง 3D เปลี่ยนสีตามผลวิเคราะห์ */
+  setHeroState(ok ? 'correct' : 'incorrect');
   $('ovState').textContent = ok ? 'ท่าถูก' : 'ควรแก้ไข';
+  $('rTag').textContent = d.low_confidence ? 'ผลก้ำกึ่ง' : (ok ? 'PASS' : 'REVIEW');
 
-  $('rTag').textContent = ok ? 'PASS' : 'REVIEW';
+  /* เลขที่แสดงต้องไม่ขัดกับคำตัดสิน: ปัดเศษแล้วห้ามข้ามเส้น 50 ไปคนละฝั่งกับคำตัดสิน */
+  var shown = Math.round(d.score);
+  if(ok && shown < 50) shown = 50;
+  if(!ok && shown >= 50) shown = 49;
+
+  $('rEmpty').classList.add('hidden');
+  reveal($('rBox'), 30);
+  drawGauge(d.score, ok);
+  $('scoreNum').className = 'score-num' + (ok ? ' ok' : '');
+  setTimeout(function(){ countTo($('scoreNum'), shown, 1000); }, 150);
   var vm = $('vmark');
   vm.className = 'vmark ' + (ok ? 'v-ok' : 'v-bad');
   vm.textContent = ok ? '✓' : '✕';
   $('vtext').textContent = ok ? 'ท่าวิ่งถูกต้อง' : 'ท่าวิ่งมีจุดที่ควรแก้ไข';
   $('vtext').style.color = ok ? 'var(--ok)' : 'var(--red)';
-
-  /* เลขที่แสดงต้องไม่ขัดกับคำตัดสิน: 50 คือเส้นแบ่ง ถ้าปัดเศษแล้วข้ามเส้นไปคนละฝั่งกับแบดจ์
-     (เช่น คะแนนจริง 49.7 ปัดเป็น 50 แต่แบดจ์บอก "ควรแก้ไข") ให้ดึงกลับมาฝั่งเดียวกัน */
-  var shown = Math.round(d.score);
-  if(ok && shown < 50) shown = 50;
-  if(!ok && shown >= 50) shown = 49;
-
-  reveal($('rBox'), 30);
-  setTimeout(function(){
-    countTo($('scoreNum'), shown, 1100);
-    $('scoreFill').style.width = Math.max(0, Math.min(100, d.score)) + '%';
-  }, 220);
-
   $('meta').innerHTML =
     '<span>เฟรมที่ใช้ <b>' + d.n_frames_used + '</b></span>' +
     '<span>ความยาว <b>' + d.duration_sec + 's</b></span>' +
-    '<span>ความมั่นใจโมเดล <b>' + Math.round(d.confidence * 100) + '%</b></span>';
+    '<span>ความมั่นใจ <b>' + Math.round(d.confidence * 100) + '%</b></span>';
 
-  /* angle gauges */
-  var ac = d.angle_context || [];
-  var top3 = ac.slice(0, 3);
-  if(top3.length){
-    $('aList').innerHTML = top3.map(function(a, i){
-      var lo = a.typical_range[0], hi = a.typical_range[1];
-      var span = (hi - lo) || 1;
-      var min = lo - span, max = hi + span;
-      var pos = Math.max(0, Math.min(100, (a.value - min) / (max - min) * 100));
-      var bL = (lo - min) / (max - min) * 100, bW = span / (max - min) * 100;
-      return '<div class="ang">' +
-        '<div class="ang-top"><span class="ang-nm">' + a.label + '</span>' +
-        '<span class="ang-v">' + a.value + '°</span></div>' +
-        '<div class="gauge" data-i="' + i + '"><div class="axis"></div>' +
-        '<div class="band" style="left:' + bL.toFixed(1) + '%;width:' + bW.toFixed(1) + '%"></div>' +
-        '<div class="pin" style="left:' + pos.toFixed(1) + '%"></div></div>' +
-        '<div class="ang-rng">ช่วงปกติของผู้ที่วิ่งท่าถูก ' + lo + '° – ' + hi + '°</div>' +
-        '</div>';
-    }).join('');
-    reveal($('aBox'), 160);
-    var gs = $('aList').querySelectorAll('.gauge');
-    for(var i = 0; i < gs.length; i++){
-      (function(g, k){ setTimeout(function(){ g.classList.add('in'); }, 420 + k * 130); })(gs[i], i);
-    }
-  }
-
-  /* advice + references */
-  var withAdv = ac.filter(function(a){ return a.advice; });
-  if(withAdv.length){
-    var refs = [];
-    $('advList').innerHTML = withAdv.map(function(a){
-      var ri = refs.indexOf(a.reference);
-      if(ri === -1){ refs.push(a.reference); ri = refs.length - 1; }
-      return '<div class="adv"><div class="h">' + a.label + '<sup>[' + (ri + 1) + ']</sup></div>' +
-             '<div class="b">' + a.advice + '</div></div>';
-    }).join('');
-    $('refList').innerHTML = refs.map(function(r){ return '<li>' + r + '</li>'; }).join('');
-    reveal($('advBox'), 300);
-  }
-
-  /* ผลก้ำกึ่ง: แสดงเป็นหมายเหตุสีเหลืองในกล่องผล พร้อมตัวเลขความน่าจะเป็นจริง
-     เดิมใช้ showError() กล่องแดง ✕ เดียวกับ error จริง ผู้ใช้จึงเข้าใจว่าวิเคราะห์ล้มเหลว
-     ทั้งที่ผลออกครบแล้ว (เจอจริงกับ fed.MOV: ถูก 47.7% / ผิด 52.3%) */
+  var p = d.class_probabilities || {};
   var lc = $('lowConf');
   if(d.low_confidence){
-    var p = d.class_probabilities || {};
     lc.innerHTML = '<b>ผลก้ำกึ่ง</b> — โมเดลให้ความน่าจะเป็น ถูก ' + Math.round((p.correct || 0) * 100) +
-      '% / ผิด ' + Math.round((p.incorrect || 0) * 100) + '% ซึ่งใกล้เส้นแบ่งมาก ผลนี้จึงยังสรุปไม่ได้ชัดเจน ' +
-      'ลองถ่ายใหม่ตามเงื่อนไขการถ่ายด้านบนเพื่อให้ได้ผลที่ชัดขึ้น';
+      '% / ผิด ' + Math.round((p.incorrect || 0) * 100) + '% ใกล้เส้นแบ่งมาก ลองถ่ายใหม่ตามเงื่อนไขการถ่ายเพื่อให้ได้ผลที่ชัดขึ้น';
     lc.classList.remove('hidden');
+  } else lc.classList.add('hidden');
+
+  /* มุมข้อต่อ: เทียบค่าเฉลี่ยทั้งคลิปกับช่วงปกติ (ข้อมูลประกอบ ไม่ใช่คำตัดสินของโมเดล) */
+  var ac = d.angle_context || [];
+  /* ซ่อนมุมที่ช่วงปกติกว้างเกิน 180° (มุมต้นขา/หน้าแข้ง) — ค่าไหนก็ "อยู่ในช่วงปกติ" ไม่ได้บอกอะไรผู้ใช้ */
+  var shownAc = ac.filter(function(a){ return (a.typical_range[1] - a.typical_range[0]) <= 180; });
+  $('aList').innerHTML = shownAc.slice(0, 4).map(function(a){
+    var lo = a.typical_range[0], hi = a.typical_range[1], span = (hi - lo) || 1;
+    var min = lo - span, max = hi + span;
+    var pos = Math.max(0, Math.min(100, (a.value - min) / (max - min) * 100));
+    var bL = (lo - min) / (max - min) * 100, bW = span / (max - min) * 100;
+    var out = a.deviation > 1;
+    return '<div class="km" data-k="' + esc(a.key || '') + '" title="ดูกราฟของมุมนี้">' +
+      '<div class="km-top"><span class="km-n">' + esc(a.label) + '</span><span class="km-v mono">' + a.value + '°</span>' +
+      '<span class="chip' + (out ? ' out' : '') + '">' + (out ? '! นอกช่วงปกติ' : '✓ ในช่วงปกติ') + '</span></div>' +
+      '<div class="gauge"><div class="axis"></div><div class="band" style="left:' + bL.toFixed(1) + '%;width:' + bW.toFixed(1) + '%"></div>' +
+      '<div class="pin" style="left:' + pos.toFixed(1) + '%"></div></div>' +
+      '<div class="rng">ช่วงปกติ ' + lo + '° – ' + hi + '°</div></div>';
+  }).join('');
+
+  /* สรุป + คำแนะนำ */
+  var outs = shownAc.filter(function(a){ return a.deviation > 1; }).map(function(a){ return a.label; });
+  var sum = (ok ? 'ภาพรวมท่าวิ่งอยู่ในเกณฑ์ถูกต้อง' : 'ภาพรวมท่าวิ่งมีจุดที่ควรปรับ') +
+    ' ได้ ' + shown + '/100 คะแนน จาก ' + d.n_frames_used + ' เฟรม (' + d.duration_sec + ' วินาที) ';
+  if(d.low_confidence) sum += 'แต่ผลนี้ก้ำกึ่ง (ถูก ' + Math.round((p.correct || 0) * 100) + '% / ผิด ' + Math.round((p.incorrect || 0) * 100) + '%) ควรถ่ายซ้ำเพื่อยืนยัน ';
+  sum += outs.length ? 'มุมที่อยู่นอกช่วงปกติของผู้วิ่งท่าถูก: ' + outs.join(', ') + ' '
+                     : 'มุมข้อต่อเฉลี่ยทุกมุมอยู่ในช่วงปกติของผู้วิ่งท่าถูก ';
+  sum += '(การเทียบมุมเป็นข้อมูลประกอบ ไม่ใช่คำตัดสินแยกของโมเดล)';
+  $('summary').textContent = sum;
+
+  var withAdv = ac.filter(function(a){ return a.advice; });
+  var refs = [];
+  $('advList').innerHTML = withAdv.map(function(a){
+    var ri = refs.indexOf(a.reference);
+    if(ri === -1){ refs.push(a.reference); ri = refs.length - 1; }
+    return '<div class="adv"><div class="h">' + esc(a.label) + '<sup>[' + (ri + 1) + ']</sup></div><div class="b">' + esc(a.advice) + '</div></div>';
+  }).join('');
+  $('refList').innerHTML = refs.map(function(r){ return '<li>' + esc(r) + '</li>'; }).join('');
+  $('refs').classList.toggle('hidden', !refs.length);
+
+  /* โครงร่างทับวิดีโอ + กราฟตามเวลา */
+  TL = (d.timeline && d.timeline.t && d.timeline.t.length) ? d.timeline : null;
+  $('lower').classList.remove('hidden');
+  if(TL){
+    fbTime = 0; fbPlaying = false;
+    showOverlay(true);
+    buildTabs();
+    drawChart();
+    drawOverlay();
   } else {
-    lc.classList.add('hidden');
+    $('p2note').textContent = 'เซิร์ฟเวอร์ไม่ได้ส่งข้อมูลโครงร่างรายเฟรมมา';
+    $('tabs').innerHTML = '';
+    $('chart').innerHTML = '';
+    $('chartCap').textContent = 'ไม่มีข้อมูลรายเฟรมสำหรับกราฟ';
   }
 }
+
+/* ---------------- ช่อง 2: โครงร่างทับวิดีโอ ---------------- */
+var ov = $('ov'), octx = ov.getContext('2d');
+/* ลำดับจุดตาม point_names: ไหล่ 0, สะโพก 1, เข่า 2, ข้อเท้า 3, ส้นเท้า 4, ปลายเท้า 5 */
+var BONES2D = [[0,1],[1,2],[2,3],[3,4],[4,5],[3,5]];
+var fbTime = 0, fbPlaying = false, fbLast = 0, looping = false;
+
+function showOverlay(on){
+  $('heroStage').classList.toggle('hidden', on);
+  ov.classList.toggle('hidden', !on);
+  $('pbar').classList.toggle('hidden', !on);
+  $('p2note').textContent = on ? 'โครงร่างที่ตรวจจับได้ (6 จุดฝั่งขวา)'
+                               : 'ตัวอย่างโครงร่างจากชุดข้อมูล · หลังวิเคราะห์จะแสดงโครงร่างทับวิดีโอของคุณ';
+  if(!on) window.dispatchEvent(new Event('resize'));   /* ให้ฉาก 3D คำนวณขนาดใหม่หลังกลับมาแสดง */
+  updatePlayLabel();
+}
+function tEnd(){ return TL ? TL.t[TL.t.length - 1] : 0; }
+function curTime(){ return (videoOk && isFinite(vid.currentTime)) ? vid.currentTime : fbTime; }
+function nearestIdx(t){
+  var a = TL.t, lo = 0, hi = a.length - 1;
+  if(!a.length) return -1;
+  while(hi - lo > 1){ var mid = (lo + hi) >> 1; if(a[mid] < t) lo = mid; else hi = mid; }
+  return (Math.abs(a[lo] - t) <= Math.abs(a[hi] - t)) ? lo : hi;
+}
+function fmtT(s){ s = Math.max(0, s || 0); var m = Math.floor(s / 60), r = Math.floor(s % 60); return m + ':' + (r < 10 ? '0' : '') + r; }
+
+function drawOverlay(){
+  if(!TL || ov.classList.contains('hidden')) return;
+  var box = ov.parentNode.getBoundingClientRect();
+  var dpr = Math.min(window.devicePixelRatio || 1, 2);
+  var W = Math.max(1, Math.round(box.width)), H = Math.max(1, Math.round(box.height));
+  if(ov.width !== W * dpr || ov.height !== H * dpr){ ov.width = W * dpr; ov.height = H * dpr; }
+  octx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  octx.fillStyle = tok('--bg') || '#0a0807';
+  octx.fillRect(0, 0, W, H);
+
+  var useVid = videoOk && vid.videoWidth > 0 && vid.readyState >= 2;
+  var fs = TL.frame_size || [9, 16];
+  var fw = useVid ? vid.videoWidth : fs[0], fh = useVid ? vid.videoHeight : fs[1];
+  var s = Math.min(W / fw, H / fh), rw = fw * s, rh = fh * s, rx = (W - rw) / 2, ry = (H - rh) / 2;
+
+  if(useVid){
+    try{ octx.drawImage(vid, rx, ry, rw, rh); }catch(e){}
+    octx.fillStyle = 'rgba(0,0,0,.22)';      /* หรี่วิดีโอเล็กน้อยให้เส้นโครงร่างเด่น */
+    octx.fillRect(rx, ry, rw, rh);
+  } else {
+    octx.fillStyle = tok('--surface') || '#121010';
+    octx.fillRect(rx, ry, rw, rh);
+    octx.strokeStyle = tok('--line-soft') || '#1f1918';
+    octx.lineWidth = 1;
+    octx.beginPath();
+    for(var gx = rx; gx <= rx + rw; gx += 26){ octx.moveTo(gx + .5, ry); octx.lineTo(gx + .5, ry + rh); }
+    for(var gy = ry; gy <= ry + rh; gy += 26){ octx.moveTo(rx, gy + .5); octx.lineTo(rx + rw, gy + .5); }
+    octx.stroke();
+  }
+
+  var ct = curTime(), i = nearestIdx(ct);
+  if(i >= 0 && Math.abs(TL.t[i] - ct) <= 0.16){
+    var P = TL.points[i].map(function(q){ return [rx + q[0] * rw, ry + q[1] * rh]; });
+    var red = tok('--red') || '#ff2e3f';
+    var lw = Math.max(2.5, Math.min(6, rw / 110));
+    octx.lineCap = 'round'; octx.lineJoin = 'round';
+    octx.strokeStyle = red; octx.lineWidth = lw;
+    octx.beginPath();
+    BONES2D.forEach(function(b){ octx.moveTo(P[b[0]][0], P[b[0]][1]); octx.lineTo(P[b[1]][0], P[b[1]][1]); });
+    octx.stroke();
+    P.forEach(function(q){
+      octx.beginPath(); octx.arc(q[0], q[1], lw * 1.25, 0, Math.PI * 2);
+      octx.fillStyle = '#ffffff'; octx.fill();
+      octx.lineWidth = Math.max(1.5, lw * .55); octx.strokeStyle = red; octx.stroke();
+    });
+  }
+  var dur = (videoOk && isFinite(vid.duration)) ? vid.duration : tEnd();
+  $('tRead').textContent = fmtT(ct) + ' / ' + fmtT(dur);
+  movePlayhead(ct);
+}
+
+function loop(now){
+  if(fbPlaying){
+    fbTime += (now - fbLast) / 1000; fbLast = now;
+    if(fbTime > tEnd()) fbTime = 0;
+  }
+  drawOverlay();
+  if((videoOk && !vid.paused && !vid.ended) || fbPlaying) requestAnimationFrame(loop);
+  else looping = false;
+}
+function startLoop(){ if(!looping){ looping = true; fbLast = performance.now(); requestAnimationFrame(loop); } }
+function isPlaying(){ return videoOk ? (!vid.paused && !vid.ended) : fbPlaying; }
+function updatePlayLabel(){ $('playBtn').textContent = isPlaying() ? 'หยุด' : 'เล่น'; }
+$('playBtn').addEventListener('click', function(){
+  if(!TL) return;
+  if(videoOk){ if(vid.paused || vid.ended) vid.play(); else vid.pause(); }
+  else { fbPlaying = !fbPlaying; if(fbPlaying) startLoop(); updatePlayLabel(); }
+});
+ov.addEventListener('click', function(){ $('playBtn').click(); });
+function seekTo(t){
+  if(videoOk){ try{ vid.currentTime = t; }catch(e){} }
+  else fbTime = t;
+  drawOverlay();
+}
+window.addEventListener('resize', function(){ if(TL){ drawOverlay(); } });
+
+/* ---------------- กราฟมุมข้อต่อตามเวลา ---------------- */
+var ACTIVE = null, CH = null;
+function buildTabs(){
+  var keys = Object.keys(TL.angles || {});
+  var pref = (RESULT.angle_context || []).map(function(a){ return a.key; }).filter(function(k){ return keys.indexOf(k) >= 0; })[0];
+  ACTIVE = pref || keys[0];
+  $('tabs').innerHTML = keys.map(function(k){
+    return '<button type="button" role="tab" class="tab" aria-selected="' + (k === ACTIVE) + '" data-k="' + esc(k) + '">' + esc((TL.labels || {})[k] || k) + '</button>';
+  }).join('');
+}
+function selectTab(k){
+  if(!TL || !TL.angles || !TL.angles[k]) return;
+  ACTIVE = k;
+  Array.prototype.forEach.call($('tabs').querySelectorAll('.tab'), function(b){ b.setAttribute('aria-selected', String(b.getAttribute('data-k') === k)); });
+  drawChart(); movePlayhead(curTime());
+}
+$('tabs').addEventListener('click', function(e){ var b = e.target.closest('.tab'); if(b) selectTab(b.getAttribute('data-k')); });
+$('aList').addEventListener('click', function(e){
+  var r = e.target.closest('.km'); if(!r) return;
+  var k = r.getAttribute('data-k');
+  if(TL && TL.angles && TL.angles[k]){ selectTab(k); $('lower').scrollIntoView({behavior: reduced ? 'auto' : 'smooth', block: 'nearest'}); }
+});
+
+function niceStep(raw){
+  var p = Math.pow(10, Math.floor(Math.log(raw) / Math.LN10)), f = raw / p;
+  return (f < 1.5 ? 1 : f < 3.5 ? 2 : f < 7.5 ? 5 : 10) * p;
+}
+function drawChart(){
+  var svg = $('chart');
+  var ts = TL.t, vs = TL.angles[ACTIVE], rg = (TL.ranges || {})[ACTIVE];
+  var W = 800, H = 250, L = 46, R = 14, T = 16, B = 30;
+  var tMax = Math.max(ts[ts.length - 1], 1);
+  var lo = Infinity, hi = -Infinity;
+  vs.forEach(function(v){ if(v < lo) lo = v; if(v > hi) hi = v; });
+  if(rg){ lo = Math.min(lo, rg[0]); hi = Math.max(hi, rg[1]); }
+  var pad = (hi - lo) * .08 || 5; lo -= pad; hi += pad;
+  var x = function(t){ return L + (W - L - R) * t / tMax; };
+  var y = function(v){ return T + (H - T - B) * (1 - (v - lo) / (hi - lo)); };
+  var out = '';
+  var ys = niceStep((hi - lo) / 4);
+  for(var v = Math.ceil(lo / ys) * ys; v <= hi; v += ys){
+    out += '<line x1="' + L + '" x2="' + (W - R) + '" y1="' + y(v).toFixed(1) + '" y2="' + y(v).toFixed(1) + '" stroke="var(--line-soft)" stroke-width="1"/>' +
+           '<text x="' + (L - 8) + '" y="' + (y(v) + 4).toFixed(1) + '" text-anchor="end">' + Math.round(v) + '°</text>';
+  }
+  var xs = niceStep(tMax / 7);
+  for(var t = 0; t <= tMax + 1e-9; t += xs){
+    out += '<text x="' + x(t).toFixed(1) + '" y="' + (H - 9) + '" text-anchor="middle">' + (Math.round(t * 10) / 10) + 's</text>';
+  }
+  if(rg){
+    out += '<rect x="' + L + '" y="' + y(rg[1]).toFixed(1) + '" width="' + (W - L - R) + '" height="' + (y(rg[0]) - y(rg[1])).toFixed(1) + '" fill="var(--band)"/>' +
+           '<line x1="' + L + '" x2="' + (W - R) + '" y1="' + y(rg[1]).toFixed(1) + '" y2="' + y(rg[1]).toFixed(1) + '" stroke="var(--muted)" stroke-dasharray="3 4" stroke-width="1"/>' +
+           '<line x1="' + L + '" x2="' + (W - R) + '" y1="' + y(rg[0]).toFixed(1) + '" y2="' + y(rg[0]).toFixed(1) + '" stroke="var(--muted)" stroke-dasharray="3 4" stroke-width="1"/>';
+  }
+  /* เส้นขาดช่วงเมื่อเฟรมหายเกิน 0.35 วินาที (ตรวจไม่เจอคน) แทนการลากเส้นเชื่อมข้ามช่องว่าง */
+  var d = '';
+  for(var i = 0; i < ts.length; i++){
+    d += ((i === 0 || ts[i] - ts[i - 1] > 0.35) ? 'M' : 'L') + x(ts[i]).toFixed(1) + ' ' + y(vs[i]).toFixed(1);
+  }
+  out += '<path d="' + d + '" fill="none" stroke="var(--red)" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>';
+  out += '<line id="ph" x1="' + L + '" x2="' + L + '" y1="' + T + '" y2="' + (H - B) + '" stroke="var(--ink-2)" stroke-width="1.5"/>';
+  out += '<circle id="hd" r="4.5" cx="-10" cy="-10" fill="var(--red)" stroke="var(--surface)" stroke-width="2"/>';
+  out += '<text id="ht" class="hv" x="-100" y="-100"></text>';
+  out += '<rect id="hit" x="' + L + '" y="' + T + '" width="' + (W - L - R) + '" height="' + (H - T - B) + '" fill="transparent"/>';
+  svg.innerHTML = out;
+  CH = {x: x, y: y, L: L, R: R, T: T, W: W, tMax: tMax};
+  $('chartCap').textContent = (rg ? 'แถบแรเงา = ช่วงปกติของผู้ที่วิ่งท่าถูก (' + rg[0] + '° – ' + rg[1] + '°) · ' : '') +
+    'เส้นแนวตั้ง = ตำแหน่งปัจจุบันของวิดีโอ · คลิกบนกราฟเพื่อข้ามไปช่วงนั้น';
+}
+function movePlayhead(t){
+  var ph = document.getElementById('ph');
+  if(!ph || !CH) return;
+  var px = CH.x(Math.max(0, Math.min(CH.tMax, t))).toFixed(1);
+  ph.setAttribute('x1', px); ph.setAttribute('x2', px);
+}
+function chartTime(e){
+  var r = $('chart').getBoundingClientRect();
+  var vx = (e.clientX - r.left) * (CH.W / r.width);
+  return Math.max(0, Math.min(CH.tMax, (vx - CH.L) / (CH.W - CH.L - CH.R) * CH.tMax));
+}
+$('chart').addEventListener('mousemove', function(e){
+  if(!TL || !CH) return;
+  var i = nearestIdx(chartTime(e)), vs = TL.angles[ACTIVE];
+  var cx = CH.x(TL.t[i]), cy = CH.y(vs[i]);
+  var hd = document.getElementById('hd'), ht = document.getElementById('ht');
+  hd.setAttribute('cx', cx.toFixed(1)); hd.setAttribute('cy', cy.toFixed(1));
+  ht.textContent = TL.t[i].toFixed(1) + 's · ' + vs[i].toFixed(1) + '°';
+  var anchorEnd = cx > CH.W - 170;
+  ht.setAttribute('text-anchor', anchorEnd ? 'end' : 'start');
+  ht.setAttribute('x', (cx + (anchorEnd ? -10 : 10)).toFixed(1));
+  ht.setAttribute('y', Math.max(CH.T + 12, cy - 10).toFixed(1));
+});
+$('chart').addEventListener('mouseleave', function(){
+  var hd = document.getElementById('hd'), ht = document.getElementById('ht');
+  if(hd){ hd.setAttribute('cx', -10); hd.setAttribute('cy', -10); }
+  if(ht){ ht.setAttribute('x', -100); ht.setAttribute('y', -100); }
+});
+$('chart').addEventListener('click', function(e){ if(TL && CH) seekTo(TL.t[nearestIdx(chartTime(e))]); });
 })();
 </script>
 </body>
