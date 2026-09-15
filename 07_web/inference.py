@@ -333,6 +333,7 @@ def extract_right_side_landmarks(video_path, progress_cb=None):
                 lm = pose[idx]
                 row[f"{name}_x"] = lm.x * w
                 row[f"{name}_y"] = lm.y * h
+                row[f"{name}_v"] = lm.visibility  # ใช้กรองเฟรมไม่มั่นใจแบบเดียวกับตอนเทรน (ดู analyze_video)
                 # พิกัดสัดส่วน 0-1 บนภาพต้นฉบับ (ถอดแถบดำ letterbox ออก) ให้หน้าเว็บวาดโครงร่างทับวิดีโอได้ตรง
                 # ไม่ใช่ feature ของโมเดล — โมเดลอ่านเฉพาะคอลัมน์ใน FEATURE_COLUMNS ผลทำนายจึงไม่เปลี่ยน
                 row[f"ov_{name}_x"] = (lm.x * w - x_off) / new_w
@@ -370,6 +371,14 @@ def analyze_video(video_path, progress_cb=None):
     report(5, "กำลังเปิดโมเดลตรวจจับท่าทาง (ขั้นตอนนี้ใช้เวลานานสุด)")
     raw_df = extract_right_side_landmarks(video_path, progress_cb=report)
     frame_size = raw_df.attrs.get("frame_size")
+
+    # ทิ้งเฟรมที่ MediaPipe ไม่มั่นใจในจุดใดจุดหนึ่ง — กฎเดียวกับ 02_prepare_dataset.load_and_clean เป๊ะ
+    # เดิมเว็บไม่ได้กรองเลย (train/serve skew): โมเดลเทรน/วัดผลบนเฟรมที่ผ่านตัวกรองนี้ แต่เว็บเอาทุกเฟรม
+    # มาเฉลี่ย เช่น Tyes เว็บใช้ 320 เฟรม ขณะที่ตอนเทรนเหลือ 202 (อีก 118 เฟรมคือเฟรมที่หลงจับขาผิดข้าง
+    # เพราะเส้นวิเคราะห์ที่วาดทับภาพ) ไม่ได้แตะโมเดล แค่ทำให้ข้อมูลที่ป้อนเข้าโมเดลตรงกับตอนเทรน
+    if len(raw_df):
+        vis_min = raw_df[prep_mod.VISIBILITY_COLUMNS].min(axis=1)
+        raw_df = raw_df[vis_min >= prep_mod.MIN_VISIBILITY]
 
     if len(raw_df) < MIN_USABLE_FRAMES:
         raise ValueError(
