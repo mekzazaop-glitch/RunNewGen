@@ -287,6 +287,14 @@ details.guide-box summary:focus-visible{outline:2px solid var(--red);outline-off
 .refs{margin-top:14px;padding-top:12px;border-top:1px solid var(--line-soft)}
 .refs .lbl{font-family:"JetBrains Mono",monospace;font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted)}
 .refs ol{margin:6px 0 0;padding-left:19px;font-size:11.5px;color:var(--muted);line-height:1.8}
+/* สรุปผลแบบอ่านง่าย: 4 แถว หัวข้อ/คำตอบ แทนย่อหน้ายาวที่มีวงเล็บซ้อน */
+.sum-list{list-style:none;margin:0;padding:0}
+.sum-list li{display:grid;grid-template-columns:minmax(0,10em) minmax(0,1fr);gap:2px 14px;padding:9px 0;border-top:1px solid var(--line-soft);font-size:14px;line-height:1.65}
+.sum-list .sl-k{color:var(--muted);font-size:13px}
+.sum-list .sl-v{color:var(--ink)}
+.sum-note{margin:10px 0 0;font-size:12px;color:var(--muted);line-height:1.7}
+.adv-lead{margin:0 0 4px;font-size:13px;color:var(--ink-2);line-height:1.7}
+@media (max-width:520px){ .sum-list li{grid-template-columns:minmax(0,1fr)} }
 
 footer{
   margin-top:36px;padding-top:16px;border-top:1px solid var(--line-soft);
@@ -466,6 +474,7 @@ details.guide-box{border-radius:12px;overflow:hidden}
         <div class="meta" id="meta"></div>
         <div class="notice hidden" id="lowConf" role="note"></div>
         <div class="notice hidden" id="oodNote" role="note"></div>
+        <div class="notice hidden" id="shortNote" role="note"></div>
         <div class="sub-h">มุมข้อต่อเทียบช่วงปกติของผู้วิ่งท่าถูก <small>เรียงจากต่างมากสุด</small></div>
         <div class="metric-list" id="aList"></div>
         <details class="more-ang hidden" id="aMoreWrap"><summary id="aMoreSum"></summary><div class="metric-list" id="aMore"></div></details>
@@ -482,7 +491,7 @@ details.guide-box{border-radius:12px;overflow:hidden}
     <div class="cols2">
       <article class="card">
         <div class="card-h"><h3 class="t">สรุปผล</h3><span class="eyebrow" id="sumTag">—</span></div>
-        <div class="card-b"><div class="kpis" id="kpis"></div><p id="summary"></p></div>
+        <div class="card-b"><div class="kpis" id="kpis"></div><div id="summary"></div></div>
       </article>
       <article class="card">
         <div class="card-h"><h3 class="t">คำแนะนำเพื่อปรับท่าวิ่ง</h3><span class="eyebrow">อ้างอิงงานวิจัย</span></div>
@@ -882,6 +891,16 @@ function confidenceWord(c){
   if(c >= .6) return 'ปานกลาง';
   return 'ต่ำ';
 }
+/* ความน่าเชื่อถือของผล เป็นคำเดียว + เหตุผลสั้นๆ (แทน "ความมั่นใจ 54%" ที่คนทั่วไปอ่านแล้วงง) —
+   ลดเป็น "ต่ำ" เมื่อ: ท่าวิ่งนอกขอบเขตข้อมูลเทรน, คะแนนชิดเส้นแบ่ง, หรือคลิปสั้นกว่า 5 วิ
+   (คลิปสั้นผลแกว่งตามจังหวะก้าวที่บังเอิญถ่ายติด วัดจากข้อมูลจริง ดู inference.SHORT_CLIP_FRAMES) */
+function reliabilityOf(d){
+  if(d.out_of_distribution && d.out_of_distribution.flag) return {word:'ต่ำ', why:'ท่าวิ่งต่างจากข้อมูลที่ระบบเรียนรู้มาก'};
+  if(d.low_confidence) return {word:'ต่ำ', why:'คะแนนอยู่ชิดเส้นแบ่ง 50'};
+  if(d.short_clip) return {word:'ต่ำ', why:'คลิปสั้นกว่า 5 วินาที'};
+  var w = confidenceWord(d.confidence);
+  return {word:w, why: w === 'สูง' ? 'คะแนนห่างจากเส้นแบ่งชัดเจน' : (w === 'ปานกลาง' ? 'คะแนนห่างจากเส้นแบ่งพอสมควร' : 'คะแนนอยู่ใกล้เส้นแบ่ง 50')};
+}
 function tierOf(d){
   /* ต้องยึดคำตัดสินจริงของโมเดล (predicted_class ที่เส้นตัดสิน threshold) เป็นหลักเสมอ — เคยพลาด
      เอาคะแนนดิบไปเทียบเส้น 35/65 ที่ตั้งเองแยกต่างหาก ทำให้คลิปที่โมเดลว่า "ถูก" (คะแนน 51-64)
@@ -933,7 +952,7 @@ function render(d){
   $('meta').innerHTML =
     '<span>เฟรมที่ใช้ <b>' + d.n_frames_used + '</b></span>' +
     '<span>ความยาว <b>' + d.duration_sec + 's</b></span>' +
-    '<span>ความมั่นใจ <b>' + Math.round(d.confidence * 100) + '%</b></span>';
+    '<span>ความน่าเชื่อถือ <b>' + reliabilityOf(d).word + '</b></span>';
 
   var p = d.class_probabilities || {};
   var lc = $('lowConf');
@@ -948,11 +967,16 @@ function render(d){
   var oo = d.out_of_distribution, on = $('oodNote');
   if(oo && oo.flag){
     on.innerHTML = '<b>ท่าวิ่งต่างจากข้อมูลที่ระบบเรียนรู้</b> — ' + esc((oo.top || []).map(function(t){ return t.label; }).join(', ')) +
-      ' ของคลิปนี้ต่างจากคลิปทั้ง ' + (oo.n_reference_clips || '') + ' คลิปที่ใช้สอนระบบอย่างชัดเจน ' +
-      'ระบบเรียนรู้คำว่า "ท่าถูก" จากกลุ่มนักศึกษาในชุดข้อมูลเท่านั้น ท่าวิ่งที่ต่างออกไปมาก (เช่น นักวิ่งที่ฝึกเฉพาะทาง ' +
-      'หรือสไตล์การลงเท้าต่างออกไป) จึงอาจถูกประเมินไม่ตรงความจริง ควรใช้คะแนนนี้เป็นข้อมูลประกอบเท่านั้น';
+      ' ต่างจากคลิปที่ใช้สอนระบบทั้ง ' + (oo.n_reference_clips || '') + ' คลิปอย่างชัดเจน ระบบเรียนรู้ "ท่าถูก" จากกลุ่มนักศึกษา' +
+      'ในชุดข้อมูล จึงอาจประเมินท่าวิ่งแบบนี้ไม่ตรงความจริง ใช้คะแนนเป็นข้อมูลประกอบ';
     on.classList.remove('hidden');
   } else on.classList.add('hidden');
+  var sn = $('shortNote');
+  if(d.short_clip){
+    sn.innerHTML = '<b>คลิปสั้น</b> — ใช้ช่วงวิ่งได้ประมาณ ' + (d.n_frames_used / 10).toFixed(1) + ' วินาที ผลอาจแกว่งตามจังหวะก้าวที่บังเอิญถ่ายติด ' +
+      'ถ่ายให้ยาวอย่างน้อย 5 วินาทีจะได้ผลที่เชื่อถือได้กว่า';
+    sn.classList.remove('hidden');
+  } else sn.classList.add('hidden');
 
   /* มุมข้อต่อ: เทียบค่าเฉลี่ยทั้งคลิปกับช่วงปกติ (ข้อมูลประกอบ ไม่ใช่คำตัดสินของโมเดล) */
   var ac = d.angle_context || [];
@@ -986,36 +1010,46 @@ function render(d){
   $('aMoreWrap').open = false;
   $('aMoreWrap').classList.toggle('hidden', !restAc.length);
 
-  /* สรุป + คำแนะนำ */
-  var outs = shownAc.filter(function(a){ return a.deviation > 1; }).map(function(a){ return a.label; });
-  var sum = 'ภาพรวม: ' + tier.label + ' (คะแนน ' + shown + '/100) — วิเคราะห์จาก ' + d.n_frames_used + ' เฟรม (' + d.duration_sec + ' วินาที) ';
-  if(d.out_of_distribution && d.out_of_distribution.flag) sum += 'ท่าวิ่งในคลิปนี้ต่างจากข้อมูลที่ระบบเรียนรู้มาก ผลจึงเป็นเพียงข้อมูลประกอบ ';
-  if(d.low_confidence) sum += 'แต่ผลนี้ก้ำกึ่ง (คะแนนห่างเส้นแบ่งเพียง ' + Math.abs(d.score - 50).toFixed(1) + ') ควรถ่ายซ้ำเพื่อยืนยัน ';
-  sum += outs.length ? 'มุมที่อยู่นอกช่วงปกติของผู้วิ่งท่าถูก: ' + outs.join(', ') + ' '
-                     : 'มุมข้อต่อเฉลี่ยทุกมุมอยู่ในช่วงปกติของผู้วิ่งท่าถูก ';
-  sum += '(การเทียบมุมเป็นข้อมูลประกอบ ไม่ใช่คำตัดสินแยกของโมเดล)';
-  $('summary').textContent = sum;
+  /* สรุปผลแบบอ่านง่าย: 4 แถว หัวข้อ/คำตอบ (เดิมเป็นย่อหน้ายาวต่อกันพร้อมวงเล็บซ้อน อ่านยาก) */
+  var rel = reliabilityOf(d);
+  var outAc = shownAc.filter(function(a){ return a.deviation > 1; });
+  var inAc = shownAc.filter(function(a){ return a.deviation <= 1; });
+  function names(list){ return list.map(function(a){ return esc(a.label); }).join(', '); }
+  function row(k, v){ return '<li><span class="sl-k">' + k + '</span><span class="sl-v">' + v + '</span></li>'; }
+  $('summary').innerHTML = '<ul class="sum-list">' +
+    row('ผลการประเมิน', esc(tier.label) + ' · คะแนน ' + shown + '/100') +
+    row('ความน่าเชื่อถือของผล', rel.word + ' — ' + rel.why) +
+    row('จุดที่ทำได้ดี', inAc.length ? names(inAc) + ' อยู่ในช่วงปกติ' : '—') +
+    row('จุดที่ควรปรับ', outAc.length ? names(outAc) + ' อยู่นอกช่วงปกติ' : 'ไม่มีมุมข้อต่อที่อยู่นอกช่วงปกติ') +
+    '</ul><p class="sum-note">คะแนนมาจากโมเดลที่ดูรูปแบบการเคลื่อนไหวทั้งตัวตลอดคลิป ส่วนการเทียบมุมข้อต่อเป็นข้อมูลประกอบเพื่อช่วยอธิบายผล</p>';
 
-  /* ต้องอ้างอิงเฉพาะมุมที่มีการ์ดให้เห็นจริง (shownAc) ไม่ใช่ทั้ง 6 มุมจาก backend (ac) —
-     เคยพบว่ามุมที่ deviation สูงสุด (เช่น มุมเท้า) ไม่มีการ์ดให้ดู แต่กล่องคำแนะนำกลับพูดถึง
-     ทำให้ผู้ใช้เห็นคำแนะนำที่อ้างถึงมุมที่ไม่มีหลักฐานให้ตรวจสอบเองเลยว่ามาจากไหน */
-  var withAdv = shownAc.filter(function(a){ return a.advice; });
+  /* คำแนะนำตามหลักการ: ให้เฉพาะมุมที่ "อยู่นอกช่วงปกติ" จริง — เดิมให้ทุกมุมที่เบี่ยงจากค่ากลางเกิน 15%
+     แม้ยังอยู่ในช่วงปกติ คลิปที่ผลดี (Tyes 80 คะแนน) จึงได้คำแนะนำให้แก้ถึง 5 ข้อ ขัดกับคำตัดสินเอง
+     ถ้าผลไม่ดีแต่ไม่มีมุมไหนหลุดช่วง บอกตรงๆ ว่ามุมเฉลี่ยปกติ แล้วชี้มุมที่ใกล้ขอบช่วงที่สุดให้สังเกตแทน
+     (อ้างอิงเฉพาะมุมที่มีการ์ดให้เห็นจริงใน shownAc เท่านั้น) */
+  var advAc = outAc.filter(function(a){ return a.advice; }), lead = '';
+  if(!advAc.length && tier.cls !== 'good'){
+    advAc = shownAc.filter(function(a){ return a.advice; }).slice(0, 2);
+    if(advAc.length) lead = 'มุมข้อต่อเฉลี่ยทุกมุมอยู่ในช่วงปกติ แต่รูปแบบการเคลื่อนไหวโดยรวมยังต่างจากผู้วิ่งท่าถูก จุดที่ใกล้ขอบช่วงปกติที่สุดที่ควรลองสังเกตคือ';
+  }
+  if(advAc.length && d.out_of_distribution && d.out_of_distribution.flag)
+    lead = 'ช่วงปกติที่ใช้เทียบมาจากกลุ่มนักศึกษาในชุดข้อมูล ท่าวิ่งในคลิปนี้อยู่นอกขอบเขตนั้น คำแนะนำด้านล่างจึงควรใช้อ้างอิงอย่างระมัดระวัง';
   var refs = [];
-  $('advList').innerHTML = withAdv.map(function(a){
+  $('advList').innerHTML = (lead ? '<p class="adv-lead">' + lead + '</p>' : '') + advAc.map(function(a){
     var ri = refs.indexOf(a.reference);
     if(ri === -1){ refs.push(a.reference); ri = refs.length - 1; }
     return '<div class="adv"><div class="h">' + esc(a.label) + '<sup>[' + (ri + 1) + ']</sup></div><div class="b">' + esc(a.advice) + '</div></div>';
   }).join('');
   $('refList').innerHTML = refs.map(function(r){ return '<li>' + esc(r) + '</li>'; }).join('');
   $('refs').classList.toggle('hidden', !refs.length);
-  if(!withAdv.length) $('advList').innerHTML = '<p class="muted-note">มุมข้อต่อเฉลี่ยใกล้ช่วงปกติ ไม่มีคำแนะนำเพิ่มเติม</p>';
-  $('sumTag').textContent = d.low_confidence ? 'ผลก้ำกึ่ง' : (ok ? 'ผ่าน' : 'ควรปรับปรุง');
+  if(!advAc.length) $('advList').innerHTML = '<p class="muted-note">มุมข้อต่อหลักทุกมุมอยู่ในช่วงปกติของผู้วิ่งท่าถูก — รักษาท่าวิ่งแบบนี้ไว้</p>';
+  $('sumTag').textContent = tier.short;
   $('printBtn').classList.remove('hidden');
   /* ตัวเลขสำคัญ 4 ช่องในกล่องสรุป — อ่านจบในแวบเดียวตอนนำเสนอ */
-  var nOut = shownAc.filter(function(a){ return a.deviation > 1; }).length;
+  var nOut = outAc.length;
   $('kpis').innerHTML =
     kpi(shown + '<small>/100</small>', 'คะแนนท่าวิ่ง · ' + tier.short, tier.cls !== 'good') +
-    kpi(confidenceWord(d.confidence), 'ความมั่นใจของระบบ', d.low_confidence) +
+    kpi(rel.word, 'ความน่าเชื่อถือของผล', rel.word === 'ต่ำ') +
     kpi(nOut + '<small>/' + shownAc.length + '</small>', 'มุมข้อต่อที่อยู่นอกช่วงปกติ', nOut > 0) +
     kpi(d.n_frames_used + '<small>เฟรม</small>', 'วิเคราะห์จากคลิป ' + d.duration_sec + ' วินาที', false);
 
