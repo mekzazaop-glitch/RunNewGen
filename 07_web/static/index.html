@@ -465,6 +465,7 @@ details.guide-box{border-radius:12px;overflow:hidden}
         </div>
         <div class="meta" id="meta"></div>
         <div class="notice hidden" id="lowConf" role="note"></div>
+        <div class="notice hidden" id="oodNote" role="note"></div>
         <div class="sub-h">มุมข้อต่อเทียบช่วงปกติของผู้วิ่งท่าถูก <small>เรียงจากต่างมากสุด</small></div>
         <div class="metric-list" id="aList"></div>
         <details class="more-ang hidden" id="aMoreWrap"><summary id="aMoreSum"></summary><div class="metric-list" id="aMore"></div></details>
@@ -888,6 +889,12 @@ function tierOf(d){
      ส่วน "ก้ำกึ่ง" ใช้ low_confidence จากเซิร์ฟเวอร์ (วัดระยะห่างจากเส้นตัดสินอย่างถูกต้องแล้ว)
      แทนการเดาเส้นใหม่เอง */
   var ok = d.predicted_class === 'correct';
+  /* ท่าวิ่งต่างจากทุกคลิปที่ใช้สอนโมเดลมาก (out_of_distribution จากเซิร์ฟเวอร์) — โมเดลกำลังตัดสินสิ่งที่
+     ไม่เคยเรียน ห้ามนำเสนอเหมือนผลปกติ แต่ก็ยังบอกทิศทางและคะแนนจริงของโมเดลตามเดิม ไม่ปรับตัวเลขใดๆ
+     (เจอจริงกับคลิปต้นแบบ Running Analysis: มุมเท้าห่างจากคลิปเทรน ~10 SD) */
+  if(d.out_of_distribution && d.out_of_distribution.flag) return {cls:'warn', icon:'?', short:'นอกขอบเขตข้อมูล',
+    label: 'ประเมินได้ไม่แน่นอน · ' + (ok ? 'ค่อนไปทางท่าถูก' : 'ค่อนไปทางควรปรับปรุง'),
+    sub:'ท่าวิ่งในคลิปนี้ต่างจากตัวอย่างที่ระบบเรียนรู้มา ผลจึงอาจไม่สะท้อนท่าวิ่งจริง — ดูรายละเอียดด้านล่าง'};
   /* ก้ำกึ่งก็ยังต้องบอกว่าโมเดลเอนไปทางไหน — เดิมขึ้นแค่ "ผลก้ำกึ่ง" คำเดียว ผู้ใช้ไม่รู้เลยว่าโมเดลตัดสิน
      ถูกหรือผิด (หน้าเว็บตอนเช้าบอก ✓/✕ ชัดเจนเสมอ แล้วค่อยเตือนเป็นหมายเหตุสีเหลือง) */
   if(d.low_confidence) return {cls:'warn', icon:'!', short:'ผลก้ำกึ่ง',
@@ -904,8 +911,8 @@ function render(d){
   setSteps(3);
   var ok = d.predicted_class === 'correct';
   setHeroState(ok ? 'correct' : 'incorrect');
-  $('ovState').textContent = ok ? 'ท่าถูก' : 'ควรแก้ไข';
   var tier = tierOf(d);
+  $('ovState').textContent = tier.short;  /* ป้ายช่อง 2 ต้องตรงกับช่อง 3 (รวมกรณีก้ำกึ่ง/นอกขอบเขตข้อมูล) */
   $('rTag').textContent = tier.short;
 
   /* เลขที่แสดงต้องไม่ขัดกับคำตัดสิน: ปัดเศษแล้วห้ามข้ามเส้น 50 ไปคนละฝั่งกับคำตัดสิน */
@@ -938,6 +945,14 @@ function render(d){
       ' คะแนน โมเดลเอนไปทาง' + (ok ? 'ท่าถูก' : 'ควรปรับปรุง') + 'เพียงเล็กน้อย ลองถ่ายใหม่ตามเงื่อนไขการถ่ายเพื่อให้ได้ผลที่ชัดขึ้น';
     lc.classList.remove('hidden');
   } else lc.classList.add('hidden');
+  var oo = d.out_of_distribution, on = $('oodNote');
+  if(oo && oo.flag){
+    on.innerHTML = '<b>ท่าวิ่งต่างจากข้อมูลที่ระบบเรียนรู้</b> — ' + esc((oo.top || []).map(function(t){ return t.label; }).join(', ')) +
+      ' ของคลิปนี้ต่างจากคลิปทั้ง ' + (oo.n_reference_clips || '') + ' คลิปที่ใช้สอนระบบอย่างชัดเจน ' +
+      'ระบบเรียนรู้คำว่า "ท่าถูก" จากกลุ่มนักศึกษาในชุดข้อมูลเท่านั้น ท่าวิ่งที่ต่างออกไปมาก (เช่น นักวิ่งที่ฝึกเฉพาะทาง ' +
+      'หรือสไตล์การลงเท้าต่างออกไป) จึงอาจถูกประเมินไม่ตรงความจริง ควรใช้คะแนนนี้เป็นข้อมูลประกอบเท่านั้น';
+    on.classList.remove('hidden');
+  } else on.classList.add('hidden');
 
   /* มุมข้อต่อ: เทียบค่าเฉลี่ยทั้งคลิปกับช่วงปกติ (ข้อมูลประกอบ ไม่ใช่คำตัดสินของโมเดล) */
   var ac = d.angle_context || [];
@@ -974,6 +989,7 @@ function render(d){
   /* สรุป + คำแนะนำ */
   var outs = shownAc.filter(function(a){ return a.deviation > 1; }).map(function(a){ return a.label; });
   var sum = 'ภาพรวม: ' + tier.label + ' (คะแนน ' + shown + '/100) — วิเคราะห์จาก ' + d.n_frames_used + ' เฟรม (' + d.duration_sec + ' วินาที) ';
+  if(d.out_of_distribution && d.out_of_distribution.flag) sum += 'ท่าวิ่งในคลิปนี้ต่างจากข้อมูลที่ระบบเรียนรู้มาก ผลจึงเป็นเพียงข้อมูลประกอบ ';
   if(d.low_confidence) sum += 'แต่ผลนี้ก้ำกึ่ง (คะแนนห่างเส้นแบ่งเพียง ' + Math.abs(d.score - 50).toFixed(1) + ') ควรถ่ายซ้ำเพื่อยืนยัน ';
   sum += outs.length ? 'มุมที่อยู่นอกช่วงปกติของผู้วิ่งท่าถูก: ' + outs.join(', ') + ' '
                      : 'มุมข้อต่อเฉลี่ยทุกมุมอยู่ในช่วงปกติของผู้วิ่งท่าถูก ';

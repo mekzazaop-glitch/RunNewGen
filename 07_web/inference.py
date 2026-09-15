@@ -30,10 +30,20 @@ MODEL_PATH = os.path.join(PARENT_DIR, "model.joblib")
 FACING_REFERENCE_PATH = os.path.join(PARENT_DIR, prep_mod.FACING_REFERENCE_PATH)
 SCORE_CONFIG_PATH = os.path.join(PARENT_DIR, "score_config.json")
 POSE_MODEL_PATH = os.path.join(PARENT_DIR, "pose_landmarker.task")
+OOD_REFERENCE_PATH = os.path.join(PARENT_DIR, "ood_reference.json")  # สร้างจาก 08_ood_reference.py
 
 ANGLE_LABELS_TH = {
     "knee_angle": "มุมเข่า", "hip_angle": "มุมสะโพก", "ankle_angle": "มุมข้อเท้า",
     "thigh_angle": "มุมต้นขา", "shank_angle": "มุมหน้าแข้ง", "foot_angle": "มุมเท้า",
+}
+FEATURE_LABELS_TH = {
+    **ANGLE_LABELS_TH,
+    "trunk_lean": "การเอนลำตัว",
+    "shoulder_x_norm": "ตำแหน่งไหล่ (หน้า-หลัง)", "shoulder_y_norm": "ความสูงไหล่",
+    "knee_x_norm": "ตำแหน่งเข่า (หน้า-หลัง)", "knee_y_norm": "ความสูงเข่า",
+    "ankle_x_norm": "ตำแหน่งข้อเท้า (หน้า-หลัง)", "ankle_y_norm": "ความสูงข้อเท้า",
+    "heel_x_norm": "ตำแหน่งส้นเท้า (หน้า-หลัง)", "heel_y_norm": "ความสูงส้นเท้า",
+    "foot_index_x_norm": "ตำแหน่งปลายเท้า (หน้า-หลัง)", "foot_index_y_norm": "ความสูงปลายเท้า",
 }
 
 # คำแนะนำเชิงโค้ช ผูกกับแต่ละมุม + งานอ้างอิงทางชีวกลศาสตร์การวิ่ง (สำหรับอ้างอิงในรายงาน/สอบ)
@@ -103,6 +113,7 @@ LABEL_MAP = {1: "correct", 0: "incorrect"}
 _model_bundle = None
 _facing_reference = None
 _score_config = None
+_ood_reference = None
 
 
 def get_model_bundle():
@@ -198,6 +209,36 @@ def build_timeline(df, frame_size):
                    for c in angles if c in specs},
         "labels": {c: ANGLE_LABELS_TH.get(c, c) for c in angles},
         "frame_size": list(frame_size) if frame_size else None,
+    }
+
+
+def get_ood_reference():
+    global _ood_reference
+    if _ood_reference is None:
+        if os.path.exists(OOD_REFERENCE_PATH):
+            with open(OOD_REFERENCE_PATH, encoding="utf-8") as f:
+                _ood_reference = json.load(f)
+        else:
+            _ood_reference = {}
+    return _ood_reference
+
+
+def build_ood_check(df):
+    """คลิปนี้อยู่ห่างจากกลุ่มคลิปที่โมเดลเคยเห็นตอนเทรนแค่ไหน (ดูเหตุผล/วิธีเลือกเส้นใน 08_ood_reference.py)
+    ไม่เปลี่ยนคำตัดสินหรือคะแนนของโมเดล — แค่บอกหน้าเว็บว่าผลนี้อยู่นอกขอบเขตข้อมูลที่โมเดลเรียนรู้"""
+    ref = get_ood_reference()
+    feats = [c for c in ref.get("features", []) if c in df.columns and ref["clip_sd"].get(c)]
+    if not feats:
+        return None
+    z = {c: (float(df[c].mean()) - ref["clip_mean"][c]) / ref["clip_sd"][c] for c in feats}
+    rms = float(np.sqrt(np.mean([v * v for v in z.values()])))
+    top = sorted(z, key=lambda c: abs(z[c]), reverse=True)[:3]
+    return {
+        "flag": rms >= ref["rms_z_threshold"],
+        "rms_z": round(rms, 2),
+        "threshold": ref["rms_z_threshold"],
+        "n_reference_clips": ref.get("n_reference_clips"),
+        "top": [{"key": c, "label": FEATURE_LABELS_TH.get(c, c), "z": round(z[c], 1)} for c in top],
     }
 
 
@@ -426,6 +467,7 @@ def analyze_video(video_path, progress_cb=None):
         },
         "low_confidence": confidence < REJECT_CONFIDENCE_THRESHOLD,
         "angle_context": build_angle_context(df, top_n=6),  # ข้อมูลประกอบ+คำแนะนำ ไม่ใช่คะแนนแยก (ดู 05_score_calibration.py)
+        "out_of_distribution": build_ood_check(df),  # คลิปต่างจากข้อมูลเทรนมากไหม (ไม่กระทบคำตัดสิน)
         "timeline": build_timeline(df, frame_size),  # โครงร่างทับวิดีโอ + กราฟตามเวลา (แสดงผลเท่านั้น)
     }
 

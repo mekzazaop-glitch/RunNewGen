@@ -23,6 +23,7 @@ splits.json
 05_*.py
 06_*.py
 07_ensemble_loso.py
+08_*.py
 make_*.py
 
 # โฟลเดอร์ deploy/frontend แยก และไฟล์ชั่วคราว

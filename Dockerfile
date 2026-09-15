@@ -24,7 +24,8 @@ COPY 07_web ./07_web
 # model.joblib = โมเดลที่เทรนแล้ว, pose_landmarker.task = โมเดล MediaPipe
 # facing_reference.json = ทิศทางอ้างอิงที่โมเดลเรียนรู้ไว้ (จาก 02_prepare_dataset.py) — ขาดไม่ได้
 # score_config.json = ช่วงมุมปกติสำหรับคิดคะแนน
-COPY model.joblib pose_landmarker.task facing_reference.json score_config.json ./
+# ood_reference.json = ค่าอ้างอิงสำหรับเตือนคลิปที่ต่างจากข้อมูลเทรนมาก (จาก 08_ood_reference.py)
+COPY model.joblib pose_landmarker.task facing_reference.json score_config.json ood_reference.json ./
 
 # Hugging Face Spaces ต้องการให้ container ฟังที่ port 7860
 ENV PORT=7860
