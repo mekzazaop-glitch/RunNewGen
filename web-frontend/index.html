@@ -927,7 +927,10 @@ function render(d){
   sum += '(การเทียบมุมเป็นข้อมูลประกอบ ไม่ใช่คำตัดสินแยกของโมเดล)';
   $('summary').textContent = sum;
 
-  var withAdv = ac.filter(function(a){ return a.advice; });
+  /* ต้องอ้างอิงเฉพาะมุมที่มีการ์ดให้เห็นจริง (shownAc) ไม่ใช่ทั้ง 6 มุมจาก backend (ac) —
+     เคยพบว่ามุมที่ deviation สูงสุด (เช่น มุมเท้า) ไม่มีการ์ดให้ดู แต่กล่องคำแนะนำกลับพูดถึง
+     ทำให้ผู้ใช้เห็นคำแนะนำที่อ้างถึงมุมที่ไม่มีหลักฐานให้ตรวจสอบเองเลยว่ามาจากไหน */
+  var withAdv = shownAc.filter(function(a){ return a.advice; });
   var refs = [];
   $('advList').innerHTML = withAdv.map(function(a){
     var ri = refs.indexOf(a.reference);
