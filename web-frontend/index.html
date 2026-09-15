@@ -854,13 +854,19 @@ function confidenceWord(c){
   if(c >= .6) return 'ปานกลาง';
   return 'ต่ำ';
 }
-function tierOf(score){
-  if(score >= 65) return {cls:'good', icon:'\u2713', label:'ท่าวิ่งอยู่ในเกณฑ์ดี',
+function tierOf(d){
+  /* ต้องยึดคำตัดสินจริงของโมเดล (predicted_class ที่เส้นตัดสิน threshold) เป็นหลักเสมอ — เคยพลาด
+     เอาคะแนนดิบไปเทียบเส้น 35/65 ที่ตั้งเองแยกต่างหาก ทำให้คลิปที่โมเดลว่า "ถูก" (คะแนน 51-64)
+     กับคลิปที่โมเดลว่า "ผิด" (คะแนน 36-49) ขึ้นข้อความ/สีเดียวกันหมด ขัดกับคำตัดสินจริง
+     ส่วน "ก้ำกึ่ง" ใช้ low_confidence จากเซิร์ฟเวอร์ (วัดระยะห่างจากเส้นตัดสินอย่างถูกต้องแล้ว)
+     แทนการเดาเส้นใหม่เอง */
+  var ok = d.predicted_class === 'correct';
+  if(d.low_confidence) return {cls:'warn', icon:'!', label:'ผลก้ำกึ่ง',
+    sub:'โมเดลตัดสินใจไม่ชัดเจน ผลอาจไม่แม่นยำ — ดูตัวเลขความน่าจะเป็นด้านล่าง'};
+  if(ok) return {cls:'good', icon:'\u2713', label:'ท่าวิ่งอยู่ในเกณฑ์ดี',
     sub:'รูปแบบการวิ่งใกล้เคียงกับผู้ที่วิ่งถูกท่าในชุดข้อมูล'};
-  if(score >= 35) return {cls:'warn', icon:'!', label:'ควรปรับปรุงบางจุด',
-    sub:'มีบางจุดที่ต่างจากรูปแบบผู้วิ่งถูกท่า ดูรายละเอียดด้านล่าง'};
   return {cls:'bad', icon:'\u2715', label:'ควรปรับปรุงท่าวิ่ง',
-    sub:'รูปแบบการวิ่งต่างจากผู้ที่วิ่งถูกท่าในชุดข้อมูลหลายจุด'};
+    sub:'รูปแบบการวิ่งต่างจากผู้ที่วิ่งถูกท่าในชุดข้อมูล'};
 }
 
 function render(d){
@@ -869,8 +875,8 @@ function render(d){
   var ok = d.predicted_class === 'correct';
   setHeroState(ok ? 'correct' : 'incorrect');
   $('ovState').textContent = ok ? 'ท่าถูก' : 'ควรแก้ไข';
-  var tierTag = tierOf(d.score);
-  $('rTag').textContent = d.low_confidence ? 'ผลก้ำกึ่ง' : tierTag.label;
+  var tier = tierOf(d);
+  $('rTag').textContent = tier.label;
 
   /* เลขที่แสดงต้องไม่ขัดกับคำตัดสิน: ปัดเศษแล้วห้ามข้ามเส้น 50 ไปคนละฝั่งกับคำตัดสิน */
   var shown = Math.round(d.score);
@@ -879,7 +885,6 @@ function render(d){
 
   $('rEmpty').classList.add('hidden');
   reveal($('rBox'), 30);
-  var tier = tierOf(d.score);
   var vi = $('vicon2'); vi.className = 'vicon2 ' + tier.cls; vi.textContent = tier.icon;
   $('vlabel').textContent = tier.label;
   $('vlabel').style.color = tier.cls === 'good' ? 'var(--ok)' : (tier.cls === 'warn' ? 'var(--warn)' : 'var(--red)');
