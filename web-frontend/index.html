@@ -701,7 +701,7 @@ function uploadWithProgress(url, form){
 }
 
 var fileInput = $('fileInput'), go = $('go'), vid = $('vid'), drop = $('drop'), media1 = $('media1');
-var file = null, fileURL = null, videoOk = false, TL = null, RESULT = null;
+var file = null, fileURL = null, videoOk = false, TL = null, RESULT = null, busy = false;
 
 $('pickBtn').addEventListener('click', function(){ fileInput.click(); });
 drop.addEventListener('click', function(){ fileInput.click(); });
@@ -715,6 +715,10 @@ media1.addEventListener('drop', function(e){
 fileInput.addEventListener('change', function(){ if(fileInput.files.length) pick(fileInput.files[0]); fileInput.value = ''; });
 
 function pick(f){
+  /* กันเลือก/ลากไฟล์ใหม่ทับระหว่างกำลังวิเคราะห์อยู่ — ถ้าปล่อยให้ทำได้ hideResults() จะล้าง
+     TL/RESULT ของงานเก่าทิ้ง แต่ poll() ของงานเก่าที่ยังค้างอยู่จะยังวิ่งต่อ พอเสร็จก็มา render()
+     ผลของวิดีโอเก่าทับหน้าจอที่กำลังโชว์วิดีโอใหม่อยู่ — ผลไม่ตรงกับวิดีโอที่เห็น */
+  if(busy) return;
   file = f;
   if(fileURL) URL.revokeObjectURL(fileURL);
   fileURL = URL.createObjectURL(f);
@@ -775,6 +779,7 @@ $('printBtn').addEventListener('click', function(){ window.print(); });
 go.addEventListener('click', function(){
   if(!file) return;
   hideResults();
+  busy = true;
   go.disabled = true; $('pickBtn').disabled = true;
   $('media2').classList.add('busy');
   setHeroState('busy');
@@ -795,6 +800,7 @@ go.addEventListener('click', function(){
       setSteps(2);
     })
     .then(function(){
+      busy = false;
       go.disabled = false; $('pickBtn').disabled = false;
       $('media2').classList.remove('busy');
       /* ถ้าได้ผลแล้ว render() ตั้งสถานะไว้แล้ว ห้ามรีเซ็ตทับ */

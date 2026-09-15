@@ -12,6 +12,7 @@ app.py — FastAPI backend: อัปโหลดคลิป -> ประมว
 
 import os
 import threading
+import time
 import uuid
 
 from fastapi import FastAPI, File, HTTPException, UploadFile
@@ -31,6 +32,19 @@ app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], all
 # เก็บสถานะงานไว้ในหน่วยความจำ (พอสำหรับ demo คนเดียว/เครื่องเดียว)
 JOBS = {}
 JOBS_LOCK = threading.Lock()
+
+# ถ้าไม่เก็บกวาด JOBS จะโตไม่มีที่สิ้นสุด (แต่ละงานมี result เต็มรวม timeline หลายร้อยจุด) —
+# บนเซิร์ฟเวอร์ที่มีแรมจำกัด (Railway 1GB) เปิดทิ้งไว้หลายวันแล้วมีคนทดสอบเยอะอาจกิน RAM จนล่มได้
+# ไม่เกี่ยวกับความแม่นยำของโมเดล เป็นแค่การดูแลหน่วยความจำของเซิร์ฟเวอร์
+JOB_TTL_SEC = 2 * 60 * 60  # เก็บผลไว้ให้ดึงดู 2 ชั่วโมง พอสำหรับ session ใช้งานจริง
+
+
+def _prune_old_jobs():
+    cutoff = time.time() - JOB_TTL_SEC
+    with JOBS_LOCK:
+        stale = [jid for jid, j in JOBS.items() if j.get("created", cutoff) < cutoff and j["status"] != "processing"]
+        for jid in stale:
+            del JOBS[jid]
 
 MAX_UPLOAD_MB = inference.MAX_FILE_SIZE_MB
 
@@ -87,8 +101,14 @@ async def analyze(file: UploadFile = File(...)):
     if not file.filename.lower().endswith((".mp4", ".mov", ".m4v")):
         raise HTTPException(400, "รองรับเฉพาะไฟล์ .mp4 / .mov")
 
+    _prune_old_jobs()
+
     job_id = uuid.uuid4().hex
-    video_path = os.path.join(UPLOAD_DIR, f"{job_id}_{file.filename}")
+    # ⚠️ ต้องใช้ os.path.basename() ตัด path ออกจากชื่อไฟล์ที่ผู้ใช้ส่งมาก่อนเสมอ — ถ้าเอา
+    # file.filename มาต่อ path ตรงๆ ผู้ใช้ที่ตั้งชื่อไฟล์เป็น "../../something" จะเขียนไฟล์หลุดออกจาก
+    # UPLOAD_DIR ได้ (path traversal) ก่อนแก้ไม่มีการกรองชื่อไฟล์เลยสักจุด
+    safe_name = os.path.basename(file.filename).replace("\\", "_").lstrip(".") or "clip.mp4"
+    video_path = os.path.join(UPLOAD_DIR, f"{job_id}_{safe_name}")
 
     size = 0
     with open(video_path, "wb") as f:
@@ -101,7 +121,8 @@ async def analyze(file: UploadFile = File(...)):
             f.write(chunk)
 
     with JOBS_LOCK:
-        JOBS[job_id] = {"status": "processing", "progress": 0, "stage": "เข้าคิวรอประมวลผล", "result": None, "error": None}
+        JOBS[job_id] = {"status": "processing", "progress": 0, "stage": "เข้าคิวรอประมวลผล",
+                         "result": None, "error": None, "created": time.time()}
 
     thread = threading.Thread(target=_process_job, args=(job_id, video_path), daemon=True)
     thread.start()
