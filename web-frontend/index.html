@@ -219,33 +219,31 @@ details.guide-box summary:focus-visible{outline:2px solid var(--red);outline-off
 .res{padding:12px 18px 16px;display:flex;flex-direction:column}
 .reveal{opacity:0;transform:translateY(10px)}
 .reveal.in{opacity:1;transform:none;transition:opacity .5s ease,transform .5s cubic-bezier(.2,.7,.3,1)}
-#gauge{width:100%;max-width:280px;height:auto;display:block;margin:0 auto}
-#gauge text{font-family:"JetBrains Mono","Anuphan",monospace;font-size:10px;fill:var(--muted)}
-.score-row{display:flex;align-items:baseline;justify-content:center;gap:8px;margin-top:-8px}
-.score-num{font-family:"Bai Jamjuree",sans-serif;font-weight:700;font-variant-numeric:tabular-nums;font-size:48px;line-height:1;color:var(--red)}
-.score-num.ok{color:var(--ok)}
-.score-of{font-family:"JetBrains Mono",monospace;font-size:12px;color:var(--muted)}
-.verdict{display:flex;align-items:center;justify-content:center;gap:10px;margin-top:10px}
-.vmark{width:28px;height:28px;flex:0 0 auto;border-radius:50%;display:grid;place-items:center;font-size:14px;font-weight:700;border:1.5px solid currentColor}
-.v-ok{color:var(--ok)}
-.v-bad{color:var(--red)}
-.vtext{font-family:"Bai Jamjuree","Anuphan",sans-serif;font-weight:700;font-size:17px;line-height:1.5}
+/* ระบบสรุปผล 3 ระดับ — แทนคะแนน 0-100 + มาตรวัดเข็มเดิม ซึ่งต้องอธิบาย "50=เส้นแบ่ง" ก่อนอ่านเข้าใจ
+   ระดับ: ดี / ควรปรับปรุงบางจุด / ควรปรับปรุง อ่านจบในคำเดียว ไม่ต้องตีความตัวเลข */
+.verdict2{display:flex;flex-direction:column;align-items:center;text-align:center;gap:5px;padding:6px 0 2px}
+.vicon2{width:60px;height:60px;border-radius:50%;display:grid;place-items:center;font-size:26px;font-weight:700;border:2px solid currentColor;margin-bottom:2px}
+.vicon2.good{color:var(--ok)}
+.vicon2.warn{color:var(--warn)}
+.vicon2.bad{color:var(--red)}
+.vlabel{font-family:"Bai Jamjuree","Anuphan",sans-serif;font-weight:700;font-size:20px;line-height:1.4}
+.vsub{font-size:12.5px;color:var(--ink-2);max-width:34ch}
+.vraw{margin-top:1px;font-family:"JetBrains Mono","Anuphan",monospace;font-size:10.5px;color:var(--muted)}
 .meta{margin-top:10px;padding-top:10px;border-top:1px solid var(--line-soft);font-family:"JetBrains Mono","Anuphan",monospace;font-size:11.5px;color:var(--muted);display:flex;gap:6px 16px;flex-wrap:wrap;justify-content:center}
 .meta b{color:var(--ink-2);font-weight:500}
 .sub-h{font-family:"Bai Jamjuree","Anuphan",sans-serif;font-weight:600;font-size:13.5px;margin:14px 0 2px;color:var(--ink-2)}
-.km{padding:9px 0;border-bottom:1px solid var(--line-soft);cursor:pointer}
-.km:last-child{border-bottom:0}
-.km:hover .km-n{color:var(--red)}
-.km-top{display:flex;align-items:center;gap:10px}
-.km-n{flex:1;font-size:14px;font-weight:500;transition:color .2s ease}
-.km-v{font-size:12.5px;color:var(--ink)}
-.chip{display:inline-flex;align-items:center;gap:4px;font-family:"JetBrains Mono","Anuphan",monospace;font-size:10.5px;padding:1px 8px;border:1px solid var(--line);color:var(--ink-2);white-space:nowrap}
-.chip.out{border-color:var(--warn);color:var(--warn);background:var(--warn-wash)}
-.gauge{position:relative;height:12px;margin-top:7px}
-.gauge .axis{position:absolute;left:0;right:0;top:5px;height:2px;background:var(--surface-2)}
-.gauge .band{position:absolute;top:3px;height:6px;background:var(--band);border:1px solid var(--ink-2);opacity:.6}
-.gauge .pin{position:absolute;top:0;width:2px;height:12px;background:var(--red);margin-left:-1px}
-.rng{font-family:"JetBrains Mono","Anuphan",monospace;font-size:10.5px;color:var(--muted);margin-top:4px}
+/* มุมข้อต่อ: การ์ดไอคอน+ป้ายสถานะ แทนแถบเกจบาง ๆ ที่ต้องอ่านตำแหน่งหมุด */
+.metric-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(148px,1fr));gap:8px}
+.metric-card{display:flex;align-items:center;gap:9px;padding:10px 11px;border:1px solid var(--line);border-radius:10px;cursor:pointer;transition:border-color .2s ease,background .2s ease}
+.metric-card:hover{border-color:var(--red)}
+.metric-card.out{border-color:var(--warn);background:var(--warn-wash)}
+.metric-icon{width:24px;height:24px;flex:0 0 auto;border-radius:50%;display:grid;place-items:center;font-size:12px;font-weight:700;border:1.5px solid currentColor;color:var(--ok)}
+.metric-card.out .metric-icon{color:var(--warn)}
+.metric-body{flex:1;min-width:0}
+.metric-name{font-size:13.5px;font-weight:600;line-height:1.4}
+.metric-status{font-size:11px;color:var(--muted)}
+.metric-card.out .metric-status{color:var(--warn)}
+.metric-val{font-size:12.5px;color:var(--ink-2);white-space:nowrap;flex:0 0 auto}
 
 /* แถวล่าง: กราฟ + สรุป */
 .tabs{display:flex;gap:4px;flex-wrap:wrap}
@@ -433,13 +431,16 @@ details.guide-box{border-radius:12px;overflow:hidden}
         <div>ผลการวิเคราะห์จะแสดงที่นี่<br>หลังเลือกวิดีโอและกด “เริ่มวิเคราะห์”</div>
       </div>
       <div class="res reveal hidden" id="rBox">
-        <svg id="gauge" viewBox="0 0 240 146" role="img" aria-label="มาตรวัดคะแนนท่าวิ่ง"></svg>
-        <div class="score-row"><div class="score-num" id="scoreNum">0</div><div class="score-of">/ 100</div></div>
-        <div class="verdict"><div class="vmark" id="vmark"></div><div class="vtext" id="vtext"></div></div>
+        <div class="verdict2">
+          <div class="vicon2" id="vicon2"></div>
+          <div class="vlabel" id="vlabel"></div>
+          <div class="vsub" id="vsub"></div>
+          <div class="vraw" id="vraw"></div>
+        </div>
         <div class="meta" id="meta"></div>
         <div class="notice hidden" id="lowConf" role="note"></div>
-        <div class="sub-h">มุมข้อต่อเทียบช่วงปกติของผู้วิ่งท่าถูก</div>
-        <div id="aList"></div>
+        <div class="sub-h">มุมข้อต่อเทียบรูปแบบของผู้วิ่งท่าถูก</div>
+        <div class="metric-grid" id="aList"></div>
       </div>
     </article>
   </div>
@@ -846,25 +847,20 @@ function countTo(el, target, ms){
   setTimeout(function(){ done = true; el.textContent = finalVal; }, ms + 250);
 }
 
-function drawGauge(score, ok){
-  var cx = 120, cy = 118, r = 92;
-  function pt(v, rr){ var a = Math.PI * (1 - v / 100); return [cx + rr * Math.cos(a), cy - rr * Math.sin(a)]; }
-  function arc(v0, v1, rr){
-    var a = pt(v0, rr), b = pt(v1, rr);
-    return 'M' + a[0].toFixed(1) + ' ' + a[1].toFixed(1) + ' A' + rr + ' ' + rr + ' 0 0 1 ' + b[0].toFixed(1) + ' ' + b[1].toFixed(1);
-  }
-  var v = Math.max(0, Math.min(100, score));
-  var col = ok ? 'var(--ok)' : 'var(--red)';
-  var n = pt(v, r - 26), m1 = pt(50, r + 11), m2 = pt(50, r - 11);
-  $('gauge').innerHTML =
-    '<path d="' + arc(0, 100, r) + '" fill="none" stroke="var(--surface-2)" stroke-width="14" stroke-linecap="round"/>' +
-    (v > 0.5 ? '<path d="' + arc(0, v, r) + '" fill="none" stroke="' + col + '" stroke-width="14" stroke-linecap="round"/>' : '') +
-    '<line x1="' + m1[0] + '" y1="' + m1[1] + '" x2="' + m2[0] + '" y2="' + m2[1] + '" stroke="var(--ink-2)" stroke-width="1.5"/>' +
-    '<line x1="' + cx + '" y1="' + cy + '" x2="' + n[0].toFixed(1) + '" y2="' + n[1].toFixed(1) + '" stroke="var(--ink)" stroke-width="3" stroke-linecap="round"/>' +
-    '<circle cx="' + cx + '" cy="' + cy + '" r="6.5" fill="var(--ink)"/>' +
-    '<text x="28" y="140" text-anchor="middle">0</text>' +
-    '<text x="212" y="140" text-anchor="middle">100</text>' +
-    '<text x="120" y="10" text-anchor="middle">50 = เส้นแบ่ง ถูก / ผิด</text>';
+/* สรุปคะแนนดิบ 0-100 (P(ถูก) ที่ยืดสเกลให้ 50=เส้นตัดสิน) เป็น 3 ระดับที่อ่านเข้าใจทันที
+   ไม่ต้องอธิบายว่า "50 คือเส้นแบ่ง" ก่อน — ยังเก็บตัวเลขดิบไว้เป็นรายละเอียดเชิงเทคนิค (vraw) */
+function confidenceWord(c){
+  if(c >= .75) return 'สูง';
+  if(c >= .6) return 'ปานกลาง';
+  return 'ต่ำ';
+}
+function tierOf(score){
+  if(score >= 65) return {cls:'good', icon:'\u2713', label:'ท่าวิ่งอยู่ในเกณฑ์ดี',
+    sub:'รูปแบบการวิ่งใกล้เคียงกับผู้ที่วิ่งถูกท่าในชุดข้อมูล'};
+  if(score >= 35) return {cls:'warn', icon:'!', label:'ควรปรับปรุงบางจุด',
+    sub:'มีบางจุดที่ต่างจากรูปแบบผู้วิ่งถูกท่า ดูรายละเอียดด้านล่าง'};
+  return {cls:'bad', icon:'\u2715', label:'ควรปรับปรุงท่าวิ่ง',
+    sub:'รูปแบบการวิ่งต่างจากผู้ที่วิ่งถูกท่าในชุดข้อมูลหลายจุด'};
 }
 
 function render(d){
@@ -873,7 +869,8 @@ function render(d){
   var ok = d.predicted_class === 'correct';
   setHeroState(ok ? 'correct' : 'incorrect');
   $('ovState').textContent = ok ? 'ท่าถูก' : 'ควรแก้ไข';
-  $('rTag').textContent = d.low_confidence ? 'ผลก้ำกึ่ง' : (ok ? 'ผ่าน' : 'ควรปรับปรุง');
+  var tierTag = tierOf(d.score);
+  $('rTag').textContent = d.low_confidence ? 'ผลก้ำกึ่ง' : tierTag.label;
 
   /* เลขที่แสดงต้องไม่ขัดกับคำตัดสิน: ปัดเศษแล้วห้ามข้ามเส้น 50 ไปคนละฝั่งกับคำตัดสิน */
   var shown = Math.round(d.score);
@@ -882,14 +879,12 @@ function render(d){
 
   $('rEmpty').classList.add('hidden');
   reveal($('rBox'), 30);
-  drawGauge(d.score, ok);
-  $('scoreNum').className = 'score-num' + (ok ? ' ok' : '');
-  setTimeout(function(){ countTo($('scoreNum'), shown, 1000); }, 150);
-  var vm = $('vmark');
-  vm.className = 'vmark ' + (ok ? 'v-ok' : 'v-bad');
-  vm.textContent = ok ? '✓' : '✕';
-  $('vtext').textContent = ok ? 'ท่าวิ่งถูกต้อง' : 'ท่าวิ่งมีจุดที่ควรแก้ไข';
-  $('vtext').style.color = ok ? 'var(--ok)' : 'var(--red)';
+  var tier = tierOf(d.score);
+  var vi = $('vicon2'); vi.className = 'vicon2 ' + tier.cls; vi.textContent = tier.icon;
+  $('vlabel').textContent = tier.label;
+  $('vlabel').style.color = tier.cls === 'good' ? 'var(--ok)' : (tier.cls === 'warn' ? 'var(--warn)' : 'var(--red)');
+  $('vsub').textContent = tier.sub;
+  $('vraw').textContent = 'รายละเอียดเชิงเทคนิค: คะแนนดิบ ' + shown + '/100 (เส้นตัดสินอยู่ที่ 50)';
   $('meta').innerHTML =
     '<span>เฟรมที่ใช้ <b>' + d.n_frames_used + '</b></span>' +
     '<span>ความยาว <b>' + d.duration_sec + 's</b></span>' +
@@ -910,23 +905,17 @@ function render(d){
   var KEY_METRICS = ['knee_angle', 'hip_angle', 'ankle_angle'];
   var shownAc = ac.filter(function(a){ return a.key ? KEY_METRICS.indexOf(a.key) >= 0 : (a.typical_range[1] - a.typical_range[0]) <= 180; });
   $('aList').innerHTML = shownAc.slice(0, 4).map(function(a){
-    var lo = a.typical_range[0], hi = a.typical_range[1], span = (hi - lo) || 1;
-    var min = lo - span, max = hi + span;
-    var pos = Math.max(0, Math.min(100, (a.value - min) / (max - min) * 100));
-    var bL = (lo - min) / (max - min) * 100, bW = span / (max - min) * 100;
     var out = a.deviation > 1;
-    return '<div class="km" data-k="' + esc(a.key || '') + '" title="ดูกราฟของมุมนี้">' +
-      '<div class="km-top"><span class="km-n">' + esc(a.label) + '</span><span class="km-v mono">' + a.value + '°</span>' +
-      '<span class="chip' + (out ? ' out' : '') + '">' + (out ? '! นอกช่วงปกติ' : '✓ ในช่วงปกติ') + '</span></div>' +
-      '<div class="gauge"><div class="axis"></div><div class="band" style="left:' + bL.toFixed(1) + '%;width:' + bW.toFixed(1) + '%"></div>' +
-      '<div class="pin" style="left:' + pos.toFixed(1) + '%"></div></div>' +
-      '<div class="rng">ช่วงปกติ ' + lo + '° – ' + hi + '°</div></div>';
+    return '<div class="metric-card' + (out ? ' out' : '') + '" data-k="' + esc(a.key || '') + '" title="ดูกราฟของมุมนี้">' +
+      '<div class="metric-icon">' + (out ? '!' : '\u2713') + '</div>' +
+      '<div class="metric-body"><div class="metric-name">' + esc(a.label) + '</div>' +
+      '<div class="metric-status">' + (out ? 'นอกช่วงปกติ' : 'ในช่วงปกติ') + '</div></div>' +
+      '<div class="metric-val mono">' + a.value + '°</div></div>';
   }).join('');
 
   /* สรุป + คำแนะนำ */
   var outs = shownAc.filter(function(a){ return a.deviation > 1; }).map(function(a){ return a.label; });
-  var sum = (ok ? 'ภาพรวมท่าวิ่งอยู่ในเกณฑ์ถูกต้อง' : 'ภาพรวมท่าวิ่งมีจุดที่ควรปรับ') +
-    ' ได้ ' + shown + '/100 คะแนน จาก ' + d.n_frames_used + ' เฟรม (' + d.duration_sec + ' วินาที) ';
+  var sum = 'ภาพรวม: ' + tier.label + ' — วิเคราะห์จาก ' + d.n_frames_used + ' เฟรม (' + d.duration_sec + ' วินาที) ';
   if(d.low_confidence) sum += 'แต่ผลนี้ก้ำกึ่ง (ถูก ' + Math.round((p.correct || 0) * 100) + '% / ผิด ' + Math.round((p.incorrect || 0) * 100) + '%) ควรถ่ายซ้ำเพื่อยืนยัน ';
   sum += outs.length ? 'มุมที่อยู่นอกช่วงปกติของผู้วิ่งท่าถูก: ' + outs.join(', ') + ' '
                      : 'มุมข้อต่อเฉลี่ยทุกมุมอยู่ในช่วงปกติของผู้วิ่งท่าถูก ';
@@ -948,8 +937,8 @@ function render(d){
   /* ตัวเลขสำคัญ 4 ช่องในกล่องสรุป — อ่านจบในแวบเดียวตอนนำเสนอ */
   var nOut = shownAc.filter(function(a){ return a.deviation > 1; }).length;
   $('kpis').innerHTML =
-    kpi(shown + '<small>/100</small>', 'คะแนนท่าวิ่ง', !ok) +
-    kpi(d.low_confidence ? 'ก้ำกึ่ง' : (ok ? 'ผ่าน' : 'ควรปรับปรุง'), 'คำตัดสิน', !ok) +
+    kpi(tier.icon + ' ' + tier.label, 'ผลการประเมิน', tier.cls !== 'good') +
+    kpi(confidenceWord(d.confidence), 'ความมั่นใจของระบบ', d.low_confidence) +
     kpi(nOut + '<small>/' + shownAc.length + '</small>', 'มุมข้อต่อที่อยู่นอกช่วงปกติ', nOut > 0) +
     kpi(d.n_frames_used + '<small>เฟรม</small>', 'วิเคราะห์จากคลิป ' + d.duration_sec + ' วินาที', false);
 
@@ -1118,7 +1107,7 @@ function selectTab(k){
 }
 $('tabs').addEventListener('click', function(e){ var b = e.target.closest('.tab'); if(b) selectTab(b.getAttribute('data-k')); });
 $('aList').addEventListener('click', function(e){
-  var r = e.target.closest('.km'); if(!r) return;
+  var r = e.target.closest('.metric-card'); if(!r) return;
   var k = r.getAttribute('data-k');
   if(TL && TL.angles && TL.angles[k]){ selectTab(k); $('lower').scrollIntoView({behavior: reduced ? 'auto' : 'smooth', block: 'nearest'}); }
 });
