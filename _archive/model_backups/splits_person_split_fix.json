@@ -34,31 +34,21 @@
     "right_foot_index_y"
   ],
   "train_subjects": [
-    "Fatom",
-    "Fbank",
-    "Fdang",
-    "Fkhing",
-    "Fkorn",
-    "Fnew",
-    "Fnot",
-    "Ftime",
-    "Fweir",
-    "Tatom",
-    "Tkhing",
-    "Tkorn",
-    "Tmek",
-    "Tnew",
-    "Tnot",
-    "Ttime",
-    "Tweir",
-    "Tyes"
+    "atom",
+    "bank",
+    "dang",
+    "khing",
+    "mek",
+    "not",
+    "time",
+    "weir",
+    "yes"
   ],
   "test_subjects": [
-    "Fmek",
     "Running Analysis",
-    "Tbank",
-    "Tdang"
+    "korn",
+    "new"
   ],
-  "n_train": 5602,
-  "n_test": 1172
+  "n_train": 5459,
+  "n_test": 1315
 }

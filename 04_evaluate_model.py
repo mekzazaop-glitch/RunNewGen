@@ -11,16 +11,15 @@
   - ถ้า accuracy/macro-F1 > 0.98 ให้สงสัยว่ามี data leakage ไว้ก่อนเสมอ
 
 ⚠️ แก้ไขสำคัญ (รอบตรวจสอบ overfit): 2 บั๊กที่ทำให้ตัวเลขก่อนหน้านี้เชื่อถือไม่ได้ — สคริปต์นี้แก้ไข
-ให้ถูกต้องแล้ว:
+ให้ถูกต้องแล้ว แต่**ไม่แตะ model.joblib ที่ deploy อยู่เลย** (ยังคงเป็น RandomForest ตัวเดิมที่เทรน
+ไว้แล้ว สคริปต์นี้แค่ประเมินผลมัน ไม่ได้เทรนใหม่ทับ):
 
   1. LOSO เดิมแบ่ง fold ตาม "clip" (subject_id ในไฟล์ข้อมูล = ชื่อคลิป เช่น Fmek/Tmek) ทำให้
-     Fmek กับ Tmek ถูกนับเป็นคนละ fold ทั้งที่**เป็นคนเดียวกันที่ถ่าย 2 คลิป** (ยืนยันจากผู้ใช้แล้ว)
-     ผลคือตอนทดสอบ Fmek โมเดลเคยเห็นท่าวิ่งของคนคนเดียวกันจาก Tmek ในชุด train มาแล้ว ทำให้ตัวเลข
-     LOSO เดิม (0.706) สูงเกินจริง — แก้ที่นี่ก่อน โดยใช้ person_of() แบ่ง fold ตามคนจริงแทน ได้
-     ตัวเลขที่ถูกต้องกว่า (~0.64) ต่อมาพบว่าบั๊กเดียวกันนี้ยังกระทบ **การแบ่ง train/test ตัวจริง**
-     ด้วย (ไม่ใช่แค่ตัวประเมิน) — แก้ไปแล้วที่ 02_prepare_dataset.py::load_and_clean() (subject_id
-     = person_of(clip) ตั้งแต่ต้นทาง) ตอนนี้ **ไม่แตะ model.joblib** หมายถึงสคริปต์นี้เอง (แค่ประเมิน
-     ไม่ได้เทรนใหม่ทับ) ส่วน model.joblib จริงถูกเทรนใหม่แล้วหลังแก้ split ที่ต้นทาง
+     Fmek กับ Tmek ถูกนับเป็นคนละ fold ทั้งที่**เป็นคนเดียวกันที่ถ่าย 2 คลิป** (ยืนยันจากผู้ใช้แล้ว —
+     ดูคอมเมนต์ที่ 02_prepare_dataset.py บรรทัด subject_id ซึ่งเคยเขียนผิดไว้ว่าเป็นคนละคน) ผลคือ
+     ตอนทดสอบ Fmek โมเดลเคยเห็นท่าวิ่งของคนคนเดียวกันจาก Tmek ในชุด train มาแล้ว ทำให้ตัวเลข LOSO
+     เดิม (0.706) สูงเกินจริง ตัวเลขที่ถูกต้องคือแบ่งตาม "คน" (ตัด F/T ออกจากชื่อคลิป) ได้ต่ำกว่า
+     ชัดเจน (~0.64) — ดูฟังก์ชัน person_of() ด้านล่าง
   2. clip_level_report() เดิมเอา label ของ "เฟรมแรก" ของคลิปมาเป็นความจริงระดับคลิป
      (`groupby("clip")["true"].first()`) คลิปที่ label รายเฟรมสลับไปมาตามจังหวะก้าว (ไม่ใช่ทุกเฟรม
      ของคลิป "T" จะ label ว่าถูก) จึงได้ความจริงตามเฟรมแรกที่บังเอิญเจอ ไม่ใช่ F/T ของคลิปจริง —
@@ -43,9 +42,10 @@ train_mod = import_module("03_train_model")  # reuse build_model()/find_balanced
                                               # กัน LOSO ใช้วิธีเลือก threshold คนละแบบกับโมเดลที่ deploy จริง
 
 
-# person_of() ย้ายไปอยู่ 02_prepare_dataset.py แล้ว (เป็น single source of truth เพราะตอนนี้
-# subject_id ในข้อมูลก็คำนวณจากฟังก์ชันเดียวกันนี้ตั้งแต่ต้นทาง) เรียกผ่าน prep_mod.person_of
-# ที่เหลือในไฟล์นี้ยังใช้ตัวแปรชื่อ person_of ไม่ได้ — เข้าถึงผ่าน prep_mod.person_of แทน
+def person_of(clip_name):
+    """ตัด F/T นำหน้าออกจากชื่อคลิป -> ได้ชื่อคน (Fmek/Tmek -> mek) คลิปที่ไม่ได้ขึ้นต้นด้วย F/T+ตัวเล็ก
+    (เช่น 'Running Analysis' ซึ่งเป็นคลิปต้นแบบ ไม่ใช่คลิปนักศึกษา) ถือเป็นคนของตัวเอง 1 คน"""
+    return re.sub(r"^[FT](?=[a-z])", "", clip_name)
 
 
 def clip_truth(clip_name, frame_labels):
@@ -109,21 +109,16 @@ def window_level_report(model, X, y, title, threshold=0.5):
 
 def loso_cv(all_df, feature_cols, rf_params):
     """Leave-One-Subject-Out CV บนข้อมูลทั้งหมด (รวม train+val+test) แบ่ง fold ตาม "คนจริง"
-    (all_df["subject_id"] = person_of(clip) มาจาก 02_prepare_dataset.py แล้ว) — มีคนจริงแค่ 12 คน
-    ไม่ใช่ 22 เหมือนจำนวนคลิป ถ้าแบ่งตามคลิปเหมือนเดิม Fmek กับ Tmek จะแยกกันคนละ fold ทั้งที่เป็น
-    คนเดียวกัน ทำให้ตัวเลขสูงเกินจริง
+    (person_of ตัด F/T ออกจากชื่อคลิป) — มีคนจริงแค่ 12 คน ไม่ใช่ 22 เหมือนจำนวนคลิป ถ้าแบ่งตาม
+    คลิปเหมือนเดิม Fmek กับ Tmek จะแยกกันคนละ fold ทั้งที่เป็นคนเดียวกัน ทำให้ตัวเลขสูงเกินจริง
 
     ใช้ build_model() และ find_balanced_threshold() ชุดเดียวกับ 03_train_model.py (ไม่ได้คิดค้น
     วิธีใหม่ในสคริปต์นี้) เพื่อให้ LOSO วัด "วิธีการเทรนที่ deploy จริง" ไม่ใช่วิธีอื่นที่ไม่มีใครใช้จริง —
     โมเดลที่ fit ในนี้เป็นโมเดลชั่วคราวสำหรับวัดผลเท่านั้น ไม่ได้เขียนทับ model.joblib"""
     X = all_df[feature_cols]
     y = all_df["Label"]
-    clip = all_df["clip"]          # ชื่อคลิปดิบ (Fmek/Tmek) — clip_truth() ต้องใช้ตัวนี้ (regex
-                                    # จับ F/T นำหน้าตัวเล็ก ถ้าส่ง subject_id ที่ตัด F/T ออกแล้วจะไม่ match)
-    person = all_df["subject_id"]  # คนจริงแล้วตั้งแต่ 02_prepare_dataset.py::load_and_clean() —
-                                    # ไม่ต้อง map ซ้ำผ่าน person_of() อีก (เคย map ซ้ำตอน subject_id
-                                    # ยังเป็นชื่อคลิป บังเอิญ idempotent เพราะ regex ไม่ match ชื่อที่
-                                    # ตัดแล้ว แต่ไม่ควรพึ่งความบังเอิญนั้นต่อ)
+    clip = all_df["subject_id"]
+    person = clip.map(person_of)
 
     n_subjects = person.nunique()
     cv = GroupKFold(n_splits=n_subjects)

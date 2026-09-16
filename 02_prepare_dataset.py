@@ -13,7 +13,6 @@
 
 import argparse
 import json
-import re
 
 import numpy as np
 import pandas as pd
@@ -146,14 +145,6 @@ def normalize_facing_direction(df, save_reference=True):
     return out
 
 
-def person_of(clip_name):
-    """ตัด F/T นำหน้าออกจากชื่อคลิป -> ได้ชื่อคนจริง (Fmek/Tmek -> mek, คนเดียวกัน 2 คลิป)
-    คลิปที่ไม่ได้ขึ้นต้นด้วย F/T+ตัวเล็ก (เช่น 'Running Analysis' ซึ่งเป็นคลิปต้นแบบ ไม่ใช่คลิป
-    นักศึกษา) ถือเป็นคนของตัวเอง 1 คน — single source of truth ของทั้งโปรเจกต์ (04_evaluate_model.py
-    import ฟังก์ชันนี้จากที่นี่แทนที่จะประกาศ regex ซ้ำเอง กันสองไฟล์เพี้ยนไปคนละทาง)"""
-    return re.sub(r"^[FT](?=[a-z])", "", clip_name)
-
-
 def load_and_clean(csv_path="landmarks_raw.csv"):
     df = pd.read_csv(csv_path)
     n_before = len(df)
@@ -177,20 +168,20 @@ def load_and_clean(csv_path="landmarks_raw.csv"):
           f"(<{MIN_VISIBILITY} ในจุดใดจุดหนึ่ง), "
           f"ทิ้งเพิ่ม {n_after_vis - len(df)} เฟรมที่ scale=0 เหลือ {len(df)} เฟรม")
 
-    # ✅ แก้แล้ว (เดิม subject_id = ชื่อคลิปตรงๆ ทำให้ Fmek/Tmek/Fbank/Tbank/Fdang/Tdang ของคนเดียวกัน
-    # หลุดไปอยู่คนละฝั่ง train/test ได้ — โมเดลเรียนรู้ลักษณะเฉพาะตัวของคนนั้นจากฝั่ง train แล้วเอาไป
-    # ช่วยทายคลิปฝั่ง test ของคนเดียวกัน เป็น data leakage จริง ทำให้ตัวเลข Test เดิม (0.783) สูงเกินจริง
-    # ยืนยันจาก 04_evaluate_model.py::person_of() ที่ใช้ regex เดียวกันนี้ทำ LOSO ตามคนจริงมาก่อนแล้ว)
-    # ตอนนี้ subject_id = คนจริง -> split_by_subject() ด้านล่าง (ไม่ต้องแก้ตรรกะ) จะรักษาคู่ F/T ของ
-    # ทุกคนให้อยู่ฝั่งเดียวกันเองโดยอัตโนมัติ ผ่าน StratifiedGroupKFold ที่รับ subject_id เป็น groups
-    df["subject_id"] = df["clip"].map(person_of)
+    # ⚠️ subject_id = ชื่อคลิป ไม่ใช่ชื่อคน — คอมเมนต์เดิมตรงนี้เขียนผิดไว้ว่า "T กับ F ของแต่ละชื่อคือ
+    # คนละคน (ยืนยันจากผู้ใช้)" ซึ่งไม่จริง ผู้ใช้ยืนยันแล้วว่า Fmek/Tmek คือ "คนเดียวกัน" ที่ถ่าย 2 คลิป
+    # (วิ่งผิด/วิ่งถูก) ผลคือ split_by_subject() ด้านล่างแบ่ง train/test ตามคลิป ไม่ใช่ตามคนจริง —
+    # Fmek กับ Tmek จึงหลุดไปอยู่คนละฝั่งได้ (เกิดขึ้นจริงในชุดที่ deploy อยู่: Fmek อยู่ Test,
+    # Tmek อยู่ Train) ทำให้ตัวเลข Test แม่นเกินจริงเล็กน้อย (ดู 04_evaluate_model.py ที่แก้ไปแล้ว
+    # ให้วัดผลแบบแยกตามคนจริงต่างหาก) — ตั้งใจ "ไม่แก้พฤติกรรมตรงนี้" เพราะการแก้จริงต้องแบ่ง
+    # split ใหม่ทั้งหมด ซึ่งจะเปลี่ยน dataset_train/test.parquet และต้องเทรนโมเดลใหม่ทับของเดิม
+    df["subject_id"] = df["clip"]
     df["prefix"] = df["clip"].str[0]
     return df
 
 
 def split_by_subject(df, test_size=0.2, seed=RANDOM_STATE):
-    """แบ่ง train/test ตามคนจริง (subject_id = person_of(clip) แล้ว ดังนั้นคู่คลิป F/T ของคนเดียวกัน
-    จะอยู่ฝั่งเดียวกันเสมอ ไม่มีทางหลุดคนละฝั่ง) ตัด val ออกตามที่ตกลง — การหา decision_threshold
+    """แบ่งแค่ train/test ตามคลิป (ตัด val ออกตามที่ตกลง) — การหา decision_threshold
     (03_train_model.py) ใช้ cross-validation บนชุด train เองแทนการมี val แยก จึงไม่ต้องเสีย
     ข้อมูลไปเป็นชุดที่สาม แต่ threshold ก็ยังไม่เห็นชุด test เลยเหมือนเดิม"""
     subjects = df["subject_id"].to_numpy()
