@@ -364,6 +364,42 @@ def validate_clip_content(df):
         )
 
 
+# กล้องมือถือ/กล้องทั่วไปสูงสุดราว 60-120fps ถ้า container รายงานมากกว่านี้แปลว่าอ่านค่าผิด ไม่ใช่ของจริง
+# — ไฟล์ .webm ที่ MediaRecorder ของเบราว์เซอร์สร้าง (ใช้ตอนย่อวิดีโออัตโนมัติ) เป็น variable frame rate
+# ไม่มี fps คงที่เก็บไว้ ffmpeg จึงรายงาน timecode scale (1000) ออกมาแทน ยืนยันด้วยไฟล์จริงแล้ว:
+# CAP_PROP_FPS=1000, CAP_PROP_FRAME_COUNT=5904 ทั้งที่ไฟล์มีแค่ 57 เฟรม ยาว 5.9 วินาที
+IMPLAUSIBLE_FPS = 120
+
+
+def _video_duration_by_scan(cap, max_duration_sec):
+    """หาความยาวจริงด้วยการ grab() ไล่จนจบแล้วอ่านเวลาของเฟรมสุดท้าย (CAP_PROP_POS_MSEC)
+    ใช้เมื่อ metadata ของ container เชื่อไม่ได้ — grab() ไม่ decode เป็นภาพจึงเบามาก
+    หยุดทันทีที่เกิน max_duration_sec ไม่ต้องไล่ทั้งไฟล์ถ้ายาวเกินอยู่แล้ว"""
+    last_ms, n = 0.0, 0
+    limit_ms = max_duration_sec * 1000
+    while cap.grab():
+        pos = cap.get(cv2.CAP_PROP_POS_MSEC)
+        if pos > last_ms:
+            last_ms = pos
+        n += 1
+        if last_ms > limit_ms:
+            break
+    return (last_ms / 1000.0) if last_ms > 0 else 0.0
+
+
+def _count_frames_by_grab(cap, fps, max_duration_sec):
+    """นับเฟรมจริงด้วย grab() (ไม่ decode ภาพ จึงเบามาก ~30,000 เฟรม/วินาที) เมื่อ CAP_PROP_FRAME_COUNT
+    ใช้ไม่ได้ — พบว่าไฟล์ .webm ที่ MediaRecorder ของเบราว์เซอร์สร้าง (ใช้ตอนย่อวิดีโออัตโนมัติฝั่ง client)
+    ไม่มี field ความยาวเขียนไว้ใน container header เพราะเป็นการบันทึกแบบสตรีม ทำให้ cv2 อ่านค่าที่ตั้งใจ
+    ไว้แทน 'ไม่ทราบ' (-1) มาตีความเป็นจำนวนเต็มขนาดใหญ่ผิดปกติ (ยืนยันแล้วด้วยไฟล์จริงจาก MediaRecorder)
+    หยุดนับที่ max_duration_sec ทันทีที่เกิน — ไม่ต้องไล่นับทั้งไฟล์ถ้ายาวเกินอยู่แล้ว"""
+    max_frames = int(max_duration_sec * fps) + int(fps) + 1  # เผื่อ fps คลาดเคลื่อนเล็กน้อย
+    n = 0
+    while n <= max_frames and cap.grab():
+        n += 1
+    return n
+
+
 def validate_video(path, max_duration_sec=MAX_DURATION_SEC, max_size_mb=MAX_FILE_SIZE_MB):
     size_mb = os.path.getsize(path) / (1024 * 1024)
     if size_mb > max_size_mb:
@@ -371,12 +407,16 @@ def validate_video(path, max_duration_sec=MAX_DURATION_SEC, max_size_mb=MAX_FILE
 
     cap = open_video(path)  # จำกัด thread ตั้งแต่ตอนเปิดครั้งแรก (ดู DECODE_THREADS ด้านล่าง)
     if not cap.isOpened():
-        raise ValueError("เปิดไฟล์วิดีโอไม่ได้ — ตรวจสอบว่าเป็นไฟล์ .mp4/.mov ที่ไม่เสีย")
+        raise ValueError("เปิดไฟล์วิดีโอไม่ได้ — ตรวจสอบว่าเป็นไฟล์ .mp4/.mov/.webm ที่ไม่เสีย")
     fps = cap.get(cv2.CAP_PROP_FPS) or 30
     n_frames = cap.get(cv2.CAP_PROP_FRAME_COUNT)
     width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
     height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
-    duration = n_frames / fps if fps else 0
+    # ⚠️ ต้องเช็ค fps ด้วย ไม่ใช่แค่ frame count — ไฟล์ webm จากเบราว์เซอร์รายงานผิด "ทั้งคู่" พร้อมกัน
+    # (fps=1000 + count=5904) ซึ่งหารกันแล้วบังเอิญได้ 5.9 วินาทีที่ถูกต้องพอดี ถ้าเช็คแค่ count
+    # จะผ่านไปได้เพราะความบังเอิญ ไม่ใช่เพราะค่าถูกจริง แล้วไปพังต่อตอนสุ่มเฟรม
+    metadata_ok = fps <= IMPLAUSIBLE_FPS and n_frames and 0 < n_frames < 10_000_000
+    duration = (n_frames / fps) if metadata_ok else _video_duration_by_scan(cap, max_duration_sec)
     cap.release()
 
     # ต้องตรวจความละเอียดด้วย ไม่ใช่แค่ขนาดไฟล์ — เฟรมใหญ่คือสาเหตุจริงที่ทำให้เซิร์ฟเวอร์ถูก OOM kill
@@ -436,6 +476,14 @@ def extract_right_side_landmarks(video_path, progress_cb=None):
     out_idx = 0
     geo = None
 
+    # ไฟล์ที่ fps เชื่อไม่ได้ (webm จากเบราว์เซอร์ เป็น variable frame rate) ต้องสุ่มเฟรมตาม "เวลาจริง
+    # ของแต่ละเฟรม" แทนการนับดัชนี ไม่งั้น frame_interval จะเพี้ยนมหาศาล (fps=1000 -> ข้ามทุก 100 เฟรม
+    # เหลือใช้แค่ 1 เฟรมจาก 57 เฟรม เจอจริงตอนทดสอบ) — สำหรับไฟล์ CFR ปกติสองวิธีให้เฟรมชุดเดียวกันเป๊ะ
+    # จึงไม่กระทบ train/serve parity กับ 01_extract_landmarks.py
+    use_timestamps = src_fps > IMPLAUSIBLE_FPS
+    sample_gap_ms = 1000.0 / SAMPLE_FPS
+    last_kept_ms = -1e9
+
     while True:
         # เฟรมที่ไม่ได้สุ่มใช้ ให้ grab() เฉยๆ ไม่ต้อง retrieve() — grab() เลื่อนตำแหน่งไปเฟรมถัดไป
         # โดยไม่ถอดรหัสเป็นภาพและไม่จองอาร์เรย์ใหม่ ส่วน cap.read() = grab() + retrieve() จึงได้
@@ -444,18 +492,37 @@ def extract_right_side_landmarks(video_path, progress_cb=None):
         # สำคัญกับเซิร์ฟเวอร์ที่แรมจำกัด: คลิป 4K 60fps มี ~1,870 เฟรม แต่ใช้จริงแค่ ~310 เฟรม
         # โค้ดเดิม read() ทุกเฟรมจึงจองอาร์เรย์เฟรมละ ~25MB รวมกว่า 1,500 ครั้งโดยเปล่าประโยชน์
         # จนถูก OOM killer ฆ่าทิ้งบน Railway (เพดาน 1GB) — เจอมาแล้วตอน deploy จริง
-        if frame_idx_src % frame_interval != 0:
+        if use_timestamps:
             if not cap.grab():
                 break
-            frame_idx_src += 1
-            continue
+            pos_ms = cap.get(cv2.CAP_PROP_POS_MSEC)
+            if pos_ms <= 0 and frame_idx_src > 0:  # POS_MSEC ใช้ไม่ได้ -> ประมาณจากลำดับเฟรมแทน
+                pos_ms = last_kept_ms + sample_gap_ms
+            # ผ่อนปรน 20% — ไฟล์ VFR ที่เบราว์เซอร์สร้างเล็งไว้ 10fps แต่จังหวะจริงแกว่ง 90-115ms
+            # ถ้าใช้เกณฑ์ตรงๆ (>=99ms) เฟรมที่ห่าง 90-92ms จะถูกข้ามแล้วไปรวมกับเฟรมถัดไป ทำให้เหลือ
+            # 41 เฟรมจากที่ควรได้ 58 เฟรม (วัดจริง) จนคลิป 5.8 วินาทีถูกแจ้งว่า "คลิปสั้น" ผิดๆ
+            # ใช้ 80% ยังคุมไฟล์ 30/60fps ให้เหลือราว 10-12 เฟรม/วินาทีตามเดิม
+            if pos_ms - last_kept_ms < sample_gap_ms * 0.8:
+                frame_idx_src += 1
+                continue
+            ret, frame = cap.retrieve()
+            if not ret:
+                break
+            last_kept_ms = pos_ms
+            timestamp_ms = int(pos_ms)
+        else:
+            if frame_idx_src % frame_interval != 0:
+                if not cap.grab():
+                    break
+                frame_idx_src += 1
+                continue
 
-        ret, frame = cap.read()
-        if not ret:
-            break
+            ret, frame = cap.read()
+            if not ret:
+                break
+            timestamp_ms = int((frame_idx_src / src_fps) * 1000)
 
         letterboxed = resize_mod.letterbox_resize(frame)
-        timestamp_ms = int((frame_idx_src / src_fps) * 1000)
         if geo is None:
             geo = _letterbox_geometry(frame.shape[1], frame.shape[0])
         del frame  # คืนอาร์เรย์เฟรมต้นฉบับ (4K = ~25MB) ทันที ไม่ต้องรอถึงรอบถัดไป

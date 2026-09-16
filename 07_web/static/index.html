@@ -391,7 +391,7 @@ details.guide-box{border-radius:12px;overflow:hidden}
       </button>
       <button class="go" id="go" type="button" disabled>เริ่มวิเคราะห์</button>
       <button class="btn hidden" id="printBtn" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9V3h12v6"/><rect x="3" y="9" width="18" height="8" rx="1.5"/><path d="M6 14h12v7H6z"/></svg>บันทึกผลเป็น PDF</button>
-      <input type="file" id="fileInput" accept="video/mp4,video/quicktime,.mp4,.mov,.m4v">
+      <input type="file" id="fileInput" accept="video/mp4,video/quicktime,video/webm,.mp4,.mov,.m4v,.webm">
     </div>
   </div>
 
@@ -402,7 +402,7 @@ details.guide-box{border-radius:12px;overflow:hidden}
       <li><span class="k">02</span><span>เห็น<b>เต็มตัว</b> ตั้งแต่ศีรษะถึงเท้า ตลอดคลิป</span></li>
       <li><span class="k">03</span><span>วิ่งบนลู่วิ่งต่อเนื่องอย่างน้อย <b>5 วินาที</b></span></li>
       <li><span class="k">04</span><span>แสงสว่างเพียงพอ พื้นหลังไม่รกจนบังตัว</span></li>
-      <li><span class="k">05</span><span>ไฟล์ <b>.mp4 / .mov</b> ความละเอียดไม่เกิน <b>Full HD (1080p)</b> ยาว <b>3-60 วินาที</b> ไม่เกิน <b>200MB</b></span></li>
+      <li><span class="k">05</span><span>ไฟล์ <b>.mp4 / .mov</b> ยาว <b>3-60 วินาที</b> — ถ่าย 4K มาก็ได้ ระบบ<b>ย่อขนาดให้อัตโนมัติ</b>ก่อนส่ง</span></li>
     </ul>
   </details>
 
@@ -745,7 +745,107 @@ fileInput.addEventListener('change', function(){ if(fileInput.files.length) pick
 
 /* ต้องตรงกับ inference.py เสมอ (MAX_FILE_SIZE_MB, MAX_FRAME_PIXELS, MAX_DURATION_SEC, MIN_USABLE_FRAMES)
    — เดิมฝั่งนี้เขียน 500MB ตามที่เซิร์ฟเวอร์เคยประกาศไว้ ซึ่งเกินที่รับไหวจริงไปเท่าตัว */
-var MAX_MB = 200, MAX_SEC = 60, MIN_SEC = 3, MAX_PIXELS = 2100000;
+/* MAX_MB = ขนาดที่เซิร์ฟเวอร์รับไหวจริง ตรวจ "หลัง" ย่อขนาดเสร็จแล้วเท่านั้น
+   HARD_MAX_MB = ด่านกันไฟล์ใหญ่ผิดปกติตั้งแต่ตอนเลือกไฟล์ (คลิป 4K 60 วินาทีอยู่ราว 400-600MB
+   ยังต้องปล่อยผ่านเข้ามาให้ย่อได้ จึงตั้งไว้สูง) */
+var MAX_MB = 200, HARD_MAX_MB = 1000, MAX_SEC = 60, MIN_SEC = 3, MAX_PIXELS = 2100000;
+
+/* ---------------- ย่อวิดีโออัตโนมัติในเบราว์เซอร์ ----------------
+   ทำไมต้องย่อฝั่งนี้ ไม่ใช่ฝั่งเซิร์ฟเวอร์: เซิร์ฟเวอร์ถูก OOM kill ตอน "ถอดรหัสเฟรม" ซึ่งเกิดก่อนที่โค้ด
+   จะได้ย่อไฟล์ (เฟรม 4K ดิบ = 25MB/เฟรม) การย่อฝั่งเซิร์ฟเวอร์จึงช่วยไม่ได้เลย ต้องย่อก่อนส่งเท่านั้น
+
+   จับภาพที่ 10fps เท่ากับ inference.SAMPLE_FPS พอดี เพราะเซิร์ฟเวอร์สุ่มเฟรมที่อัตรานี้อยู่แล้ว
+   ไฟล์ที่ได้จึงเล็กมากโดยไม่เสียเฟรมที่ระบบต้องใช้จริงแม้แต่เฟรมเดียว และเล่นที่ความเร็วปกติ (1x)
+   ห้ามเร่ง playbackRate เพราะจะทำให้จำนวนเฟรมต่อวินาทีจริงลดลงต่ำกว่า 10fps ที่โมเดลเรียนมา */
+var DOWNSCALE_FPS = 10, DOWNSCALE_PIXELS = 1000000, downscaled = false;
+
+function pickRecorderMime(){
+  var list = ['video/webm;codecs=vp9', 'video/webm;codecs=vp8', 'video/webm'];
+  for(var i = 0; i < list.length; i++){
+    try{ if(window.MediaRecorder && MediaRecorder.isTypeSupported(list[i])) return list[i]; }catch(e){}
+  }
+  return '';
+}
+function canDownscale(){
+  return !!(window.MediaRecorder && HTMLCanvasElement.prototype.captureStream && pickRecorderMime());
+}
+
+function autoDownscale(onProgress){
+  return new Promise(function(resolve, reject){
+    var w = vid.videoWidth, h = vid.videoHeight;
+    var s = Math.min(1, Math.sqrt(DOWNSCALE_PIXELS / (w * h)));
+    var cw = Math.max(2, Math.round(w * s / 2) * 2), ch = Math.max(2, Math.round(h * s / 2) * 2);
+    var cv = document.createElement('canvas'); cv.width = cw; cv.height = ch;
+    var cx = cv.getContext('2d');
+    var rec;
+    try{ rec = new MediaRecorder(cv.captureStream(DOWNSCALE_FPS), {mimeType: pickRecorderMime(), videoBitsPerSecond: 2500000}); }
+    catch(e){ reject(e); return; }
+
+    var chunks = [], stopped = false, last = -1, dur = vid.duration;
+    rec.ondataavailable = function(e){ if(e.data && e.data.size) chunks.push(e.data); };
+    rec.onerror = function(e){ reject((e && e.error) || new Error('บันทึกวิดีโอไม่สำเร็จ')); };
+    rec.onstop = function(){
+      var blob = new Blob(chunks, {type: 'video/webm'});
+      if(!blob.size){ reject(new Error('ได้ไฟล์ว่าง')); return; }
+      var base = (file && file.name ? file.name.replace(/\.[^.]+$/, '') : 'clip');
+      resolve(new File([blob], base + '_' + ch + 'p.webm', {type: 'video/webm'}));
+    };
+    function finish(){ if(stopped) return; stopped = true; try{ rec.stop(); }catch(e){} try{ vid.pause(); }catch(e){} }
+    function drawNow(){
+      cx.drawImage(vid, 0, 0, cw, ch);
+      if(onProgress && dur) onProgress(Math.min(1, vid.currentTime / dur));
+    }
+    /* วาดเฉพาะเฟรมที่ห่างกัน >= 1/10 วินาที — วิดีโอต้นฉบับ 60fps ไม่ต้องวาดครบทุกเฟรม
+       ลดภาระเครื่อง (สำคัญมากบนมือถือ) โดยไม่กระทบเฟรมที่เซิร์ฟเวอร์จะใช้จริง */
+    function onFrame(){
+      if(stopped) return;
+      var t = vid.currentTime;
+      if(last < 0 || t - last >= 1 / DOWNSCALE_FPS - 0.005){ last = t; drawNow(); }
+      if(vid.requestVideoFrameCallback) vid.requestVideoFrameCallback(onFrame);
+      else requestAnimationFrame(onFrame);
+    }
+    vid.addEventListener('ended', finish, {once: true});
+    vid.muted = true;
+    try{ vid.currentTime = 0; }catch(e){}
+    vid.play().then(function(){
+      rec.start();
+      drawNow();
+      if(vid.requestVideoFrameCallback) vid.requestVideoFrameCallback(onFrame);
+      else requestAnimationFrame(onFrame);
+    }).catch(reject);
+    /* กันค้าง: ถ้าผู้ใช้กดหยุดวิดีโอกลางคัน event 'ended' จะไม่มาตลอดไป */
+    setTimeout(finish, (isFinite(dur) ? dur + 10 : 70) * 1000);
+  });
+}
+
+function startAutoDownscale(){
+  downscaled = true;
+  go.disabled = true; $('pickBtn').disabled = true;
+  $('err').classList.add('hidden');
+  $('prog').classList.remove('hidden');
+  setProgress(0);
+  $('upTag').textContent = 'กำลังย่อขนาด';
+  $('stage').textContent = 'กำลังย่อขนาดวิดีโอให้อัตโนมัติ… ไม่ต้องทำอะไร รอสักครู่';
+  var beforeMB = (file.size / 1048576).toFixed(1);
+  autoDownscale(function(p){
+    setProgress(p * 100);
+    $('stage').textContent = 'กำลังย่อขนาดวิดีโอให้อัตโนมัติ… ' + Math.round(p * 100) + '%';
+  }).then(function(nf){
+    $('prog').classList.add('hidden');
+    file = nf;
+    if(fileURL) URL.revokeObjectURL(fileURL);
+    fileURL = URL.createObjectURL(nf);
+    vid.src = fileURL; vid.load();
+    $('fname').textContent = nf.name + '  ·  ' + (nf.size / 1048576).toFixed(1) + ' MB (ย่อจาก ' + beforeMB + ' MB ให้อัตโนมัติ)';
+    $('upTag').textContent = 'พร้อมวิเคราะห์';
+    go.disabled = false; $('pickBtn').disabled = false;
+  }).catch(function(e){
+    $('prog').classList.add('hidden');
+    $('pickBtn').disabled = false; go.disabled = true;
+    showError('ย่อขนาดวิดีโออัตโนมัติไม่สำเร็จ — ตั้งกล้องมือถือเป็น 1080p แล้วถ่ายใหม่ ' +
+      '(' + ((e && e.message) ? e.message : e) + ')');
+  });
+}
 function pick(f){
   /* กันเลือก/ลากไฟล์ใหม่ทับระหว่างกำลังวิเคราะห์อยู่ — ถ้าปล่อยให้ทำได้ hideResults() จะล้าง
      TL/RESULT ของงานเก่าทิ้ง แต่ poll() ของงานเก่าที่ยังค้างอยู่จะยังวิ่งต่อ พอเสร็จก็มา render()
@@ -753,8 +853,15 @@ function pick(f){
   if(busy) return;
   /* ตรวจไฟล์ก่อนอัปโหลด — เดิมส่งไฟล์ทั้งก้อน (ใหญ่ได้ถึงหลายร้อย MB ใช้เวลาหลายนาที) แล้วเซิร์ฟเวอร์
      ค่อยปฏิเสธเพราะนามสกุล/ขนาดไม่ผ่าน ผู้ใช้เสียเวลารอฟรีๆ */
-  if(!/\.(mp4|mov|m4v)$/i.test(f.name)){ showError('รองรับเฉพาะไฟล์ .mp4 / .mov / .m4v'); return; }
-  if(f.size > MAX_MB * 1048576){ showError('ไฟล์ใหญ่ ' + (f.size / 1048576).toFixed(0) + 'MB เกินขีดจำกัด ' + MAX_MB + 'MB — ลองตัดคลิปให้สั้นลงหรือลดความละเอียด'); return; }
+  if(!/\.(mp4|mov|m4v|webm)$/i.test(f.name)){ showError('รองรับเฉพาะไฟล์ .mp4 / .mov / .m4v / .webm'); return; }
+  /* ⚠️ ห้ามตรวจ MAX_MB ตรงนี้ — คลิป 4K จากมือถือมักใหญ่เกิน 200MB อยู่แล้ว ถ้าปฏิเสธตั้งแต่ตอนนี้
+     จะไม่มีวันได้ย่ออัตโนมัติเลย ผิดวัตถุประสงค์ทั้งหมด (ไฟล์ 4K 6 วินาทีที่ใช้ทดสอบ = 235MB)
+     ย้ายไปตรวจหลังรู้ความละเอียดแล้วใน loadedmetadata / หลังย่อเสร็จ / ใน vid.error แทน
+     ตรงนี้กันแค่ไฟล์ใหญ่ผิดปกติจนเบราว์เซอร์เองก็อ่านไม่ไหว */
+  if(f.size > HARD_MAX_MB * 1048576){
+    showError('ไฟล์ใหญ่ผิดปกติ ' + (f.size / 1048576).toFixed(0) + 'MB — ตัดคลิปให้สั้นลงก่อน (ระบบรับคลิปยาวไม่เกิน ' + MAX_SEC + ' วินาที)');
+    return;
+  }
   file = f;
   if(fileURL) URL.revokeObjectURL(fileURL);
   fileURL = URL.createObjectURL(f);
@@ -778,16 +885,33 @@ vid.addEventListener('loadeddata', function(){ videoOk = true; if(TL) drawOverla
    เซิร์ฟเวอร์ยังตรวจซ้ำอีกชั้นเสมอ) — 3 วินาทีคือความยาวขั้นต่ำที่ผลเริ่มนิ่งพอ (ดู inference.MIN_USABLE_FRAMES) */
 vid.addEventListener('loadedmetadata', function(){
   if(!file) return;
-  /* ความละเอียดสำคัญกว่าขนาดไฟล์ — เฟรม 4K ทำให้เซิร์ฟเวอร์ถูก OOM kill (วัดจริง: 4K ใช้แรม 663MB
-     เทียบ 1080p 444MB) บอกตั้งแต่ตอนเลือกไฟล์ ดีกว่าให้รออัปโหลดร้อย MB แล้วค่อยโดนปฏิเสธ */
+  /* ตรวจความยาวก่อนเสมอ — ถ้าคลิปยาว/สั้นเกินอยู่แล้ว ไม่ต้องเสียเวลาย่อขนาดให้เปล่าประโยชน์ */
+  if(isFinite(vid.duration)){
+    if(vid.duration > MAX_SEC){
+      showError('คลิปยาว ' + vid.duration.toFixed(0) + ' วินาที เกินที่ระบบรับได้ ' + MAX_SEC + ' วินาที — ตัดเฉพาะช่วงที่วิ่งมาใหม่');
+      go.disabled = true; return;
+    }
+    if(vid.duration < MIN_SEC){
+      showError('คลิปสั้น ' + vid.duration.toFixed(1) + ' วินาที — ต้องมีช่วงวิ่งอย่างน้อย ' + MIN_SEC + ' วินาที ผลจึงจะเชื่อถือได้');
+      go.disabled = true; return;
+    }
+  }
+  /* ความละเอียดสูงเกินทำให้เซิร์ฟเวอร์ถูก OOM kill (วัดจริง: 4K ใช้แรม 663MB เทียบ 1080p 444MB)
+     เดิมปฏิเสธแล้วให้ผู้ใช้ไปตั้งกล้องใหม่เอง ตอนนี้ย่อให้อัตโนมัติแทน ผู้ใช้ไม่ต้องทำอะไร
+     — downscaled กันวนซ้ำ (ไฟล์ที่ย่อแล้วจะ trigger loadedmetadata อีกรอบ แต่ผ่านเกณฑ์แล้ว) */
   if(vid.videoWidth && vid.videoWidth * vid.videoHeight > MAX_PIXELS){
+    if(!downscaled && canDownscale()){ startAutoDownscale(); return; }
     showError('วิดีโอความละเอียดสูงเกินไป (' + vid.videoWidth + '×' + vid.videoHeight + ') ระบบรับได้ถึง Full HD (1080p) ' +
       '— ตั้งกล้องมือถือเป็น 1080p แล้วถ่ายใหม่ ผลวิเคราะห์ไม่ต่างกันเพราะระบบย่อทุกคลิปเหลือ 960×720 อยู่แล้ว');
     go.disabled = true; return;
   }
-  if(!isFinite(vid.duration)) return;
-  if(vid.duration > MAX_SEC){ showError('คลิปยาว ' + vid.duration.toFixed(0) + ' วินาที เกินที่ระบบรับได้ ' + MAX_SEC + ' วินาที — ตัดเฉพาะช่วงที่วิ่งมาใหม่'); go.disabled = true; }
-  else if(vid.duration < MIN_SEC){ showError('คลิปสั้น ' + vid.duration.toFixed(1) + ' วินาที — ต้องมีช่วงวิ่งอย่างน้อย ' + MIN_SEC + ' วินาที ผลจึงจะเชื่อถือได้'); go.disabled = true; }
+  /* ถึงตรงนี้ความละเอียดผ่านแล้ว (ไฟล์เดิมเล็กพออยู่แล้ว หรือย่อเสร็จแล้วโหลดกลับเข้ามารอบสอง)
+     ค่อยตรวจขนาดไฟล์จริงตอนนี้ — ถ้าตรวจตั้งแต่ตอนเลือกไฟล์ คลิป 4K จะโดนปฏิเสธก่อนได้ย่อ */
+  if(file.size > MAX_MB * 1048576){
+    showError('ไฟล์ใหญ่ ' + (file.size / 1048576).toFixed(0) + 'MB เกินขีดจำกัด ' + MAX_MB + 'MB ' +
+      '— ลองตัดคลิปให้สั้นลง (ระบบรับไม่เกิน ' + MAX_SEC + ' วินาที)');
+    go.disabled = true;
+  }
 });
 vid.addEventListener('error', function(){
   if(!file) return;
@@ -795,6 +919,16 @@ vid.addEventListener('error', function(){
   vid.classList.add('hidden');
   $('noPlay').classList.remove('hidden');
   if(TL){ drawOverlay(); }
+  /* เบราว์เซอร์ถอดรหัสไฟล์นี้ไม่ได้ (มักเป็น HEVC จากไอโฟนเปิดบน Chrome) -> loadedmetadata ไม่ทำงาน
+     การตรวจขนาด/ความละเอียดและการย่ออัตโนมัติจึงไม่มีทางเกิดขึ้นเลย ต้องตรวจขนาดตรงนี้แทน
+     ไม่งั้นผู้ใช้จะรออัปโหลดหลายร้อย MB แล้วค่อยโดนเซิร์ฟเวอร์ปฏิเสธ
+     (บน Safari ของไอโฟนถอดรหัส HEVC ได้ ระบบจะย่อให้อัตโนมัติตามปกติ) */
+  if(file.size > MAX_MB * 1048576){
+    showError('ไฟล์ใหญ่ ' + (file.size / 1048576).toFixed(0) + 'MB เกินขีดจำกัด ' + MAX_MB + 'MB ' +
+      'และเบราว์เซอร์นี้เปิดไฟล์ไม่ได้จึงย่อขนาดให้อัตโนมัติไม่ได้ — ลองเปิดด้วย Safari (บนไอโฟน) ' +
+      'หรือตั้งกล้องเป็น 1080p แล้วถ่ายใหม่');
+    go.disabled = true;
+  }
 });
 vid.addEventListener('play', function(){ updatePlayLabel(); startLoop(); });
 vid.addEventListener('pause', function(){ updatePlayLabel(); drawOverlay(); });

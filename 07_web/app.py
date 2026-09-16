@@ -117,8 +117,10 @@ def check_model_on_startup():
 
 @app.post("/api/analyze")
 async def analyze(file: UploadFile = File(...)):
-    if not file.filename.lower().endswith((".mp4", ".mov", ".m4v")):
-        raise HTTPException(400, "รองรับเฉพาะไฟล์ .mp4 / .mov")
+    # .webm เพิ่มมาเพื่อรองรับไฟล์ที่หน้าเว็บย่อขนาดให้อัตโนมัติก่อนส่ง (ดู autoDownscale ใน index.html)
+    # — เบราว์เซอร์เข้ารหัสวิดีโอเองได้แค่ webm (MediaRecorder) ไม่ใช่ mp4/mov
+    if not file.filename.lower().endswith((".mp4", ".mov", ".m4v", ".webm")):
+        raise HTTPException(400, "รองรับเฉพาะไฟล์ .mp4 / .mov / .webm")
 
     _prune_old_jobs()
 
