@@ -402,7 +402,7 @@ details.guide-box{border-radius:12px;overflow:hidden}
       <li><span class="k">02</span><span>เห็น<b>เต็มตัว</b> ตั้งแต่ศีรษะถึงเท้า ตลอดคลิป</span></li>
       <li><span class="k">03</span><span>วิ่งบนลู่วิ่งต่อเนื่องอย่างน้อย <b>5 วินาที</b></span></li>
       <li><span class="k">04</span><span>แสงสว่างเพียงพอ พื้นหลังไม่รกจนบังตัว</span></li>
-      <li><span class="k">05</span><span>ไฟล์ <b>.mp4 / .mov</b> ไม่เกิน <b>500MB</b> และ <b>60 วินาที</b></span></li>
+      <li><span class="k">05</span><span>ไฟล์ <b>.mp4 / .mov</b> ความละเอียดไม่เกิน <b>Full HD (1080p)</b> ยาว <b>3-60 วินาที</b> ไม่เกิน <b>200MB</b></span></li>
     </ul>
   </details>
 
@@ -421,7 +421,7 @@ details.guide-box{border-radius:12px;overflow:hidden}
         <div class="drop" id="drop" role="button" tabindex="0" aria-label="เลือกไฟล์วิดีโอ">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="1.5"/><path d="M10 9.5v5l4.2-2.5z"/></svg>
           <div class="lead">ลากคลิปมาวางตรงนี้ หรือคลิกเพื่อเลือกไฟล์</div>
-          <div class="sub">.mp4 / .mov · ไม่เกิน 500MB · ไม่เกิน 60 วินาที</div>
+          <div class="sub">.mp4 / .mov · ไม่เกิน 1080p · 3-60 วินาที · ไม่เกิน 200MB</div>
         </div>
         <video id="vid" class="hidden" controls playsinline preload="auto"></video>
         <div class="nop hidden" id="noPlay">
@@ -703,7 +703,7 @@ function setProgress(p){
 
 /* ---------------- upload ----------------
    ใช้ XMLHttpRequest ไม่ใช่ fetch() เพราะ fetch ไม่มี event บอกความคืบหน้า "ขาส่งขึ้น" เลย
-   คลิปจริงใหญ่ได้ถึง ~200-300MB ซึ่งบนเน็ตบ้านใช้เวลาส่งหลายนาที ถ้าใช้ fetch แถบจะค้างที่ 0%
+   คลิปจริงใหญ่ได้ถึง 200MB (ลิมิตปัจจุบัน) ซึ่งบนเน็ตบ้านใช้เวลาส่งหลายนาที ถ้าใช้ fetch แถบจะค้างที่ 0%
    ตลอดช่วงนั้นจนผู้ใช้เข้าใจว่าเว็บค้าง/พัง (เคยเกิดขึ้นจริงตอนทดสอบไฟล์ 196MB) */
 function uploadWithProgress(url, form){
   return new Promise(function(resolve, reject){
@@ -743,7 +743,9 @@ media1.addEventListener('drop', function(e){
 });
 fileInput.addEventListener('change', function(){ if(fileInput.files.length) pick(fileInput.files[0]); fileInput.value = ''; });
 
-var MAX_MB = 500, MAX_SEC = 60, MIN_SEC = 3;
+/* ต้องตรงกับ inference.py เสมอ (MAX_FILE_SIZE_MB, MAX_FRAME_PIXELS, MAX_DURATION_SEC, MIN_USABLE_FRAMES)
+   — เดิมฝั่งนี้เขียน 500MB ตามที่เซิร์ฟเวอร์เคยประกาศไว้ ซึ่งเกินที่รับไหวจริงไปเท่าตัว */
+var MAX_MB = 200, MAX_SEC = 60, MIN_SEC = 3, MAX_PIXELS = 2100000;
 function pick(f){
   /* กันเลือก/ลากไฟล์ใหม่ทับระหว่างกำลังวิเคราะห์อยู่ — ถ้าปล่อยให้ทำได้ hideResults() จะล้าง
      TL/RESULT ของงานเก่าทิ้ง แต่ poll() ของงานเก่าที่ยังค้างอยู่จะยังวิ่งต่อ พอเสร็จก็มา render()
@@ -775,7 +777,15 @@ vid.addEventListener('loadeddata', function(){ videoOk = true; if(TL) drawOverla
 /* บอกเรื่องความยาวคลิปตั้งแต่ยังไม่กดวิเคราะห์ (ไฟล์ HEVC ที่เบราว์เซอร์อ่านไม่ได้จะไม่เข้าเงื่อนไขนี้
    เซิร์ฟเวอร์ยังตรวจซ้ำอีกชั้นเสมอ) — 3 วินาทีคือความยาวขั้นต่ำที่ผลเริ่มนิ่งพอ (ดู inference.MIN_USABLE_FRAMES) */
 vid.addEventListener('loadedmetadata', function(){
-  if(!file || !isFinite(vid.duration)) return;
+  if(!file) return;
+  /* ความละเอียดสำคัญกว่าขนาดไฟล์ — เฟรม 4K ทำให้เซิร์ฟเวอร์ถูก OOM kill (วัดจริง: 4K ใช้แรม 663MB
+     เทียบ 1080p 444MB) บอกตั้งแต่ตอนเลือกไฟล์ ดีกว่าให้รออัปโหลดร้อย MB แล้วค่อยโดนปฏิเสธ */
+  if(vid.videoWidth && vid.videoWidth * vid.videoHeight > MAX_PIXELS){
+    showError('วิดีโอความละเอียดสูงเกินไป (' + vid.videoWidth + '×' + vid.videoHeight + ') ระบบรับได้ถึง Full HD (1080p) ' +
+      '— ตั้งกล้องมือถือเป็น 1080p แล้วถ่ายใหม่ ผลวิเคราะห์ไม่ต่างกันเพราะระบบย่อทุกคลิปเหลือ 960×720 อยู่แล้ว');
+    go.disabled = true; return;
+  }
+  if(!isFinite(vid.duration)) return;
   if(vid.duration > MAX_SEC){ showError('คลิปยาว ' + vid.duration.toFixed(0) + ' วินาที เกินที่ระบบรับได้ ' + MAX_SEC + ' วินาที — ตัดเฉพาะช่วงที่วิ่งมาใหม่'); go.disabled = true; }
   else if(vid.duration < MIN_SEC){ showError('คลิปสั้น ' + vid.duration.toFixed(1) + ' วินาที — ต้องมีช่วงวิ่งอย่างน้อย ' + MIN_SEC + ' วินาที ผลจึงจะเชื่อถือได้'); go.disabled = true; }
 });
