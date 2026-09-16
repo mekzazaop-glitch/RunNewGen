@@ -25,7 +25,10 @@ TRAIN_PATH = "dataset_train.parquet"
 TEST_PATH = "dataset_test.parquet"
 OUTPUT_PATH = "ood_reference.json"
 
-EXCLUDE_FEATURES = {"thigh_angle", "shank_angle"}  # มุมเทียบแนวดิ่งที่ค่าวนรอบ ±180°
+# มุมเทียบแนวดิ่ง (arctan2) ค่าวนรอบที่ ±180° -> ค่าเฉลี่ยเลขคณิตของมันผิดทางคณิตศาสตร์ ใช้เทียบไม่ได้
+# foot_angle เพิ่งพบว่าต้องตัดด้วย: ค่าเฉลี่ยของ Running Analysis ที่คำนวณแบบเดิมได้ 36.8° (ค่าจริงเชิงมุม
+# คือ 147°) ทำให้ z สูงถึง -10.7 กลายเป็นตัวชี้หลักที่ทำให้คลิปนั้นถูกเตือนว่า "นอกขอบเขตข้อมูล"
+EXCLUDE_FEATURES = {"thigh_angle", "shank_angle", "foot_angle"}
 
 # เลือกจากการตรวจแบบ leave-one-clip-out ทั้ง 22 คลิป (ตารางที่สคริปต์นี้พิมพ์ออกมา): คลิปนักศึกษาทุกคลิป
 # rms_z <= 2.0, Running Analysis = 3.55 — ตั้งเส้นที่ 2.5 ให้ห่างจากคลิปปกติพอสมควรกันเตือนพร่ำเพรื่อ

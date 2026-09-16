@@ -13,8 +13,7 @@
   "knee_angle",
   "hip_angle",
   "ankle_angle",
-  "trunk_lean",
-  "foot_angle"
+  "trunk_lean"
  ],
  "clip_mean": {
   "shoulder_x_norm": 0.122793,
@@ -30,8 +29,7 @@
   "knee_angle": 145.835008,
   "hip_angle": 166.590743,
   "ankle_angle": 108.658626,
-  "trunk_lean": 7.078387,
-  "foot_angle": 115.67887
+  "trunk_lean": 7.078387
  },
  "clip_sd": {
   "shoulder_x_norm": 0.053929,
@@ -47,8 +45,7 @@
   "knee_angle": 6.362268,
   "hip_angle": 3.46604,
   "ankle_angle": 6.33185,
-  "trunk_lean": 3.129782,
-  "foot_angle": 7.395974
+  "trunk_lean": 3.129782
  },
  "n_reference_clips": 18,
  "reference_clips": [
