@@ -85,6 +85,21 @@ def _process_job(job_id, video_path):
 
 
 @app.on_event("startup")
+def clean_leftover_uploads():
+    """ลบไฟล์วิดีโอค้างใน uploads/ ตอนเริ่มเซิร์ฟเวอร์ — ปกติ _process_job() ลบให้เองทุกงาน แต่ถ้า
+    process ถูก kill กลางคัน (เคยเกิดจริงตอนโดน OOM) ไฟล์คลิปหลักร้อย MB จะค้างกินดิสก์ถาวร"""
+    removed = 0
+    for name in os.listdir(UPLOAD_DIR):
+        try:
+            os.remove(os.path.join(UPLOAD_DIR, name))
+            removed += 1
+        except OSError:
+            pass
+    if removed:
+        print(f"ลบไฟล์อัปโหลดค้างจากรอบก่อน {removed} ไฟล์")
+
+
+@app.on_event("startup")
 def check_model_on_startup():
     try:
         inference.get_model_bundle()

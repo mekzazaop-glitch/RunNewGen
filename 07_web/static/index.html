@@ -284,9 +284,7 @@ details.guide-box summary:focus-visible{outline:2px solid var(--red);outline-off
 .adv .h{font-family:"Bai Jamjuree","Anuphan",sans-serif;font-weight:600;font-size:14px}
 .adv .h sup{font-family:"JetBrains Mono",monospace;font-size:9.5px;color:var(--red);margin-left:4px}
 .adv .b{font-size:13px;color:var(--ink-2);margin-top:3px;line-height:1.75}
-.refs{margin-top:14px;padding-top:12px;border-top:1px solid var(--line-soft)}
-.refs .lbl{font-family:"JetBrains Mono",monospace;font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted)}
-.refs ol{margin:6px 0 0;padding-left:19px;font-size:11.5px;color:var(--muted);line-height:1.8}
+.adv .src{margin-top:5px;font-size:11px;color:var(--muted);line-height:1.65}
 /* สรุปผลแบบอ่านง่าย: 4 แถว หัวข้อ/คำตอบ แทนย่อหน้ายาวที่มีวงเล็บซ้อน */
 .sum-list{list-style:none;margin:0;padding:0}
 .sum-list li{display:grid;grid-template-columns:minmax(0,10em) minmax(0,1fr);gap:2px 14px;padding:9px 0;border-top:1px solid var(--line-soft);font-size:14px;line-height:1.65}
@@ -408,7 +406,7 @@ details.guide-box{border-radius:12px;overflow:hidden}
 
   <div class="prog hidden" id="prog">
     <div class="ticks" id="ticks"></div>
-    <div class="prog-meta"><span id="stage">—</span><span class="pc" id="pct">0%</span></div>
+    <div class="prog-meta"><span id="stage" aria-live="polite">—</span><span class="pc" id="pct">0%</span></div>
   </div>
 
   <div class="err hidden" id="err" role="alert"></div>
@@ -471,7 +469,6 @@ details.guide-box{border-radius:12px;overflow:hidden}
           <div class="score2-track"><div class="score2-fill" id="scoreFill"></div><span class="pass" aria-hidden="true"></span></div>
           <div class="score2-legend"><span>0</span><span class="mid">50 = เส้นแบ่ง ถูก / ผิด</span><span>100</span></div>
         </div>
-        <div class="meta" id="meta"></div>
         <div class="notice hidden" id="lowConf" role="note"></div>
         <div class="notice hidden" id="oodNote" role="note"></div>
         <div class="notice hidden" id="shortNote" role="note"></div>
@@ -486,7 +483,7 @@ details.guide-box{border-radius:12px;overflow:hidden}
     <article class="card">
       <div class="card-h"><h3 class="t">มุมข้อต่อตามเวลา</h3><div class="tabs" role="tablist" id="tabs" aria-label="เลือกมุมข้อต่อ"></div></div>
       <div class="chart-wrap"><svg id="chart" viewBox="0 0 1100 260" role="img" aria-label="กราฟมุมข้อต่อตามเวลา"></svg></div>
-      <p class="cap" id="chartCap">แถบแรเงา = ช่วงปกติของผู้ที่วิ่งท่าถูก · เส้นแนวตั้ง = ตำแหน่งปัจจุบันของวิดีโอ · คลิกบนกราฟเพื่อข้ามไปช่วงนั้น</p>
+      <p class="cap" id="chartCap">แถบแรเงา = ช่วงปกติ · เส้นแนวตั้ง = ตำแหน่งในวิดีโอ · คลิกบนกราฟเพื่อข้ามไปช่วงนั้น</p>
     </article>
     <div class="cols2">
       <article class="card">
@@ -497,7 +494,6 @@ details.guide-box{border-radius:12px;overflow:hidden}
         <div class="card-h"><h3 class="t">คำแนะนำเพื่อปรับท่าวิ่ง</h3><span class="eyebrow">อ้างอิงงานวิจัย</span></div>
         <div class="card-b">
           <div id="advList"></div>
-          <div class="refs hidden" id="refs"><div class="lbl">References</div><ol id="refList"></ol></div>
         </div>
       </article>
     </div>
@@ -746,11 +742,16 @@ media1.addEventListener('drop', function(e){
 });
 fileInput.addEventListener('change', function(){ if(fileInput.files.length) pick(fileInput.files[0]); fileInput.value = ''; });
 
+var MAX_MB = 500, MAX_SEC = 60, MIN_SEC = 3;
 function pick(f){
   /* กันเลือก/ลากไฟล์ใหม่ทับระหว่างกำลังวิเคราะห์อยู่ — ถ้าปล่อยให้ทำได้ hideResults() จะล้าง
      TL/RESULT ของงานเก่าทิ้ง แต่ poll() ของงานเก่าที่ยังค้างอยู่จะยังวิ่งต่อ พอเสร็จก็มา render()
      ผลของวิดีโอเก่าทับหน้าจอที่กำลังโชว์วิดีโอใหม่อยู่ — ผลไม่ตรงกับวิดีโอที่เห็น */
   if(busy) return;
+  /* ตรวจไฟล์ก่อนอัปโหลด — เดิมส่งไฟล์ทั้งก้อน (ใหญ่ได้ถึงหลายร้อย MB ใช้เวลาหลายนาที) แล้วเซิร์ฟเวอร์
+     ค่อยปฏิเสธเพราะนามสกุล/ขนาดไม่ผ่าน ผู้ใช้เสียเวลารอฟรีๆ */
+  if(!/\.(mp4|mov|m4v)$/i.test(f.name)){ showError('รองรับเฉพาะไฟล์ .mp4 / .mov / .m4v'); return; }
+  if(f.size > MAX_MB * 1048576){ showError('ไฟล์ใหญ่ ' + (f.size / 1048576).toFixed(0) + 'MB เกินขีดจำกัด ' + MAX_MB + 'MB — ลองตัดคลิปให้สั้นลงหรือลดความละเอียด'); return; }
   file = f;
   if(fileURL) URL.revokeObjectURL(fileURL);
   fileURL = URL.createObjectURL(f);
@@ -770,6 +771,13 @@ function pick(f){
 }
 
 vid.addEventListener('loadeddata', function(){ videoOk = true; if(TL) drawOverlay(); });
+/* บอกเรื่องความยาวคลิปตั้งแต่ยังไม่กดวิเคราะห์ (ไฟล์ HEVC ที่เบราว์เซอร์อ่านไม่ได้จะไม่เข้าเงื่อนไขนี้
+   เซิร์ฟเวอร์ยังตรวจซ้ำอีกชั้นเสมอ) — 3 วินาทีคือความยาวขั้นต่ำที่ผลเริ่มนิ่งพอ (ดู inference.MIN_USABLE_FRAMES) */
+vid.addEventListener('loadedmetadata', function(){
+  if(!file || !isFinite(vid.duration)) return;
+  if(vid.duration > MAX_SEC){ showError('คลิปยาว ' + vid.duration.toFixed(0) + ' วินาที เกินที่ระบบรับได้ ' + MAX_SEC + ' วินาที — ตัดเฉพาะช่วงที่วิ่งมาใหม่'); go.disabled = true; }
+  else if(vid.duration < MIN_SEC){ showError('คลิปสั้น ' + vid.duration.toFixed(1) + ' วินาที — ต้องมีช่วงวิ่งอย่างน้อย ' + MIN_SEC + ' วินาที ผลจึงจะเชื่อถือได้'); go.disabled = true; }
+});
 vid.addEventListener('error', function(){
   if(!file) return;
   videoOk = false;
@@ -787,7 +795,9 @@ vid.addEventListener('ended', function(){ updatePlayLabel(); });
 
 function hideResults(){
   $('err').classList.add('hidden');
-  $('lowConf').classList.add('hidden');
+  /* ต้องซ่อน "ทุก" หมายเหตุของผลเก่า — เคยซ่อนแค่ lowConf ทำให้หมายเหตุนอกขอบเขตข้อมูล/คลิปสั้น
+     ของคลิปก่อนหน้ายังค้างอยู่บนหน้าจอตอนเริ่มวิเคราะห์คลิปใหม่ */
+  ['lowConf','oodNote','shortNote'].forEach(function(id){ $(id).classList.add('hidden'); });
   $('rBox').classList.add('hidden'); $('rBox').classList.remove('in');
   $('rEmpty').classList.remove('hidden');
   $('lower').classList.add('hidden');
@@ -848,8 +858,12 @@ function poll(jobId){
     setProgress(40 + s.progress * 0.6);   /* ต่อจากช่วงอัปโหลด ไม่ให้แถบถอยหลัง */
     $('stage').textContent = s.stage;
     if(s.status === 'done'){
-      return fetch('/api/result/' + jobId).then(function(r){ return r.json(); })
-        .then(function(data){ render(data); $('prog').classList.add('hidden'); });
+      /* ต้องเช็ค res.ok ก่อนเสมอ — ถ้าเซิร์ฟเวอร์ตอบ error (job หมดอายุ/รีสตาร์ท) ตัว body เป็น
+         {detail:"..."} ไม่ใช่ผลวิเคราะห์ ถ้าเอาไป render() ตรงๆ หน้าผลจะขึ้นค่าว่าง/NaN ทั้งการ์ด */
+      return fetch('/api/result/' + jobId).then(function(r){
+        if(!r.ok) throw new Error('ดึงผลวิเคราะห์ไม่ได้ (HTTP ' + r.status + ') — กด “เริ่มวิเคราะห์” อีกครั้ง');
+        return r.json();
+      }).then(function(data){ render(data); $('prog').classList.add('hidden'); });
     }
     if(s.status === 'failed'){
       return fetch('/api/result/' + jobId)
@@ -931,7 +945,8 @@ function render(d){
   var ok = d.predicted_class === 'correct';
   setHeroState(ok ? 'correct' : 'incorrect');
   var tier = tierOf(d);
-  $('ovState').textContent = tier.short;  /* ป้ายช่อง 2 ต้องตรงกับช่อง 3 (รวมกรณีก้ำกึ่ง/นอกขอบเขตข้อมูล) */
+  /* ช่อง 2 บอกสิ่งที่ช่อง 2 ทำจริง (ตรวจจับได้กี่เฟรม) ไม่ซ้ำป้ายคำตัดสินที่มีอยู่แล้วทั้งช่อง 3 และกล่องสรุป */
+  $('ovState').textContent = 'ตรวจจับได้ ' + d.n_frames_used + ' เฟรม';
   $('rTag').textContent = tier.short;
 
   /* เลขที่แสดงต้องไม่ขัดกับคำตัดสิน: ปัดเศษแล้วห้ามข้ามเส้น 50 ไปคนละฝั่งกับคำตัดสิน */
@@ -949,12 +964,6 @@ function render(d){
   $('scoreFill').style.width = '0';
   countTo($('scoreNum'), shown, 1100);
   setTimeout(function(){ $('scoreFill').style.width = Math.max(0, Math.min(100, d.score)) + '%'; }, 220);
-  $('meta').innerHTML =
-    '<span>เฟรมที่ใช้ <b>' + d.n_frames_used + '</b></span>' +
-    '<span>ความยาว <b>' + d.duration_sec + 's</b></span>' +
-    '<span>ความน่าเชื่อถือ <b>' + reliabilityOf(d).word + '</b></span>';
-
-  var p = d.class_probabilities || {};
   var lc = $('lowConf');
   if(d.low_confidence){
     /* บอกเป็นระยะห่างจากเส้น 50 ของคะแนน ไม่ใช่ % ความน่าจะเป็นดิบ — เส้นตัดสินของโมเดลอยู่ที่ P(ถูก)=0.48
@@ -1034,14 +1043,12 @@ function render(d){
   }
   if(advAc.length && d.out_of_distribution && d.out_of_distribution.flag)
     lead = 'ช่วงปกติที่ใช้เทียบมาจากกลุ่มนักศึกษาในชุดข้อมูล ท่าวิ่งในคลิปนี้อยู่นอกขอบเขตนั้น คำแนะนำด้านล่างจึงควรใช้อ้างอิงอย่างระมัดระวัง';
-  var refs = [];
+  /* แนบงานวิจัยไว้ใต้คำแนะนำแต่ละข้อโดยตรง — เดิมเป็นเลขยกกำลัง [1] แล้วต้องไปไล่หาในรายการ
+     References ท้ายการ์ด อ่านทีละข้อไม่รู้ว่าอ้างจากงานไหน (และรายการท้ายการ์ดก็ซ้ำกับตัวคำแนะนำ) */
   $('advList').innerHTML = (lead ? '<p class="adv-lead">' + lead + '</p>' : '') + advAc.map(function(a){
-    var ri = refs.indexOf(a.reference);
-    if(ri === -1){ refs.push(a.reference); ri = refs.length - 1; }
-    return '<div class="adv"><div class="h">' + esc(a.label) + '<sup>[' + (ri + 1) + ']</sup></div><div class="b">' + esc(a.advice) + '</div></div>';
+    return '<div class="adv"><div class="h">' + esc(a.label) + '</div><div class="b">' + esc(a.advice) + '</div>' +
+      (a.reference ? '<div class="src">อ้างอิง: ' + esc(a.reference) + '</div>' : '') + '</div>';
   }).join('');
-  $('refList').innerHTML = refs.map(function(r){ return '<li>' + esc(r) + '</li>'; }).join('');
-  $('refs').classList.toggle('hidden', !refs.length);
   if(!advAc.length) $('advList').innerHTML = '<p class="muted-note">มุมข้อต่อหลักทุกมุมอยู่ในช่วงปกติของผู้วิ่งท่าถูก — รักษาท่าวิ่งแบบนี้ไว้</p>';
   $('sumTag').textContent = tier.short;
   $('printBtn').classList.remove('hidden');
