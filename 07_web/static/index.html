@@ -470,7 +470,6 @@ details.guide-box{border-radius:12px;overflow:hidden}
           <div class="score2-legend"><span>0</span><span class="mid">50 = เส้นแบ่ง ถูก / ผิด</span><span>100</span></div>
         </div>
         <div class="notice hidden" id="lowConf" role="note"></div>
-        <div class="notice hidden" id="oodNote" role="note"></div>
         <div class="notice hidden" id="shortNote" role="note"></div>
         <div class="sub-h">มุมข้อต่อเทียบช่วงปกติของผู้วิ่งท่าถูก <small>เรียงจากต่างมากสุด</small></div>
         <div class="metric-list" id="aList"></div>
@@ -797,7 +796,7 @@ function hideResults(){
   $('err').classList.add('hidden');
   /* ต้องซ่อน "ทุก" หมายเหตุของผลเก่า — เคยซ่อนแค่ lowConf ทำให้หมายเหตุนอกขอบเขตข้อมูล/คลิปสั้น
      ของคลิปก่อนหน้ายังค้างอยู่บนหน้าจอตอนเริ่มวิเคราะห์คลิปใหม่ */
-  ['lowConf','oodNote','shortNote'].forEach(function(id){ $(id).classList.add('hidden'); });
+  ['lowConf','shortNote'].forEach(function(id){ $(id).classList.add('hidden'); });
   $('rBox').classList.add('hidden'); $('rBox').classList.remove('in');
   $('rEmpty').classList.remove('hidden');
   $('lower').classList.add('hidden');
@@ -909,7 +908,6 @@ function confidenceWord(c){
    ลดเป็น "ต่ำ" เมื่อ: ท่าวิ่งนอกขอบเขตข้อมูลเทรน, คะแนนชิดเส้นแบ่ง, หรือคลิปสั้นกว่า 5 วิ
    (คลิปสั้นผลแกว่งตามจังหวะก้าวที่บังเอิญถ่ายติด วัดจากข้อมูลจริง ดู inference.SHORT_CLIP_FRAMES) */
 function reliabilityOf(d){
-  if(d.out_of_distribution && d.out_of_distribution.flag) return {word:'ต่ำ', why:'ท่าวิ่งต่างจากข้อมูลที่ระบบเรียนรู้มาก'};
   if(d.low_confidence) return {word:'ต่ำ', why:'คะแนนอยู่ชิดเส้นแบ่ง 50'};
   if(d.short_clip) return {word:'ต่ำ', why:'คลิปสั้นกว่า 5 วินาที'};
   var w = confidenceWord(d.confidence);
@@ -922,12 +920,6 @@ function tierOf(d){
      ส่วน "ก้ำกึ่ง" ใช้ low_confidence จากเซิร์ฟเวอร์ (วัดระยะห่างจากเส้นตัดสินอย่างถูกต้องแล้ว)
      แทนการเดาเส้นใหม่เอง */
   var ok = d.predicted_class === 'correct';
-  /* ท่าวิ่งต่างจากทุกคลิปที่ใช้สอนโมเดลมาก (out_of_distribution จากเซิร์ฟเวอร์) — โมเดลกำลังตัดสินสิ่งที่
-     ไม่เคยเรียน ห้ามนำเสนอเหมือนผลปกติ แต่ก็ยังบอกทิศทางและคะแนนจริงของโมเดลตามเดิม ไม่ปรับตัวเลขใดๆ
-     (เจอจริงกับคลิปต้นแบบ Running Analysis: มุมเท้าห่างจากคลิปเทรน ~10 SD) */
-  if(d.out_of_distribution && d.out_of_distribution.flag) return {cls:'warn', icon:'?', short:'นอกขอบเขตข้อมูล',
-    label: 'ประเมินได้ไม่แน่นอน · ' + (ok ? 'ค่อนไปทางท่าถูก' : 'ค่อนไปทางควรปรับปรุง'),
-    sub:'ท่าวิ่งในคลิปนี้ต่างจากตัวอย่างที่ระบบเรียนรู้มา ผลจึงอาจไม่สะท้อนท่าวิ่งจริง — ดูรายละเอียดด้านล่าง'};
   /* ก้ำกึ่งก็ยังต้องบอกว่าโมเดลเอนไปทางไหน — เดิมขึ้นแค่ "ผลก้ำกึ่ง" คำเดียว ผู้ใช้ไม่รู้เลยว่าโมเดลตัดสิน
      ถูกหรือผิด (หน้าเว็บตอนเช้าบอก ✓/✕ ชัดเจนเสมอ แล้วค่อยเตือนเป็นหมายเหตุสีเหลือง) */
   if(d.low_confidence) return {cls:'warn', icon:'!', short:'ผลก้ำกึ่ง',
@@ -973,13 +965,6 @@ function render(d){
       ' คะแนน โมเดลเอนไปทาง' + (ok ? 'ท่าถูก' : 'ควรปรับปรุง') + 'เพียงเล็กน้อย ลองถ่ายใหม่ตามเงื่อนไขการถ่ายเพื่อให้ได้ผลที่ชัดขึ้น';
     lc.classList.remove('hidden');
   } else lc.classList.add('hidden');
-  var oo = d.out_of_distribution, on = $('oodNote');
-  if(oo && oo.flag){
-    on.innerHTML = '<b>ท่าวิ่งต่างจากข้อมูลที่ระบบเรียนรู้</b> — ' + esc((oo.top || []).map(function(t){ return t.label; }).join(', ')) +
-      ' ต่างจากคลิปที่ใช้สอนระบบทั้ง ' + (oo.n_reference_clips || '') + ' คลิปอย่างชัดเจน ระบบเรียนรู้ "ท่าถูก" จากกลุ่มนักศึกษา' +
-      'ในชุดข้อมูล จึงอาจประเมินท่าวิ่งแบบนี้ไม่ตรงความจริง ใช้คะแนนเป็นข้อมูลประกอบ';
-    on.classList.remove('hidden');
-  } else on.classList.add('hidden');
   var sn = $('shortNote');
   if(d.short_clip){
     sn.innerHTML = '<b>คลิปสั้น</b> — ใช้ช่วงวิ่งได้ประมาณ ' + (d.n_frames_used / 10).toFixed(1) + ' วินาที ผลอาจแกว่งตามจังหวะก้าวที่บังเอิญถ่ายติด ' +
@@ -1041,8 +1026,6 @@ function render(d){
     advAc = shownAc.filter(function(a){ return a.advice; }).slice(0, 2);
     if(advAc.length) lead = 'มุมข้อต่อเฉลี่ยทุกมุมอยู่ในช่วงปกติ แต่รูปแบบการเคลื่อนไหวโดยรวมยังต่างจากผู้วิ่งท่าถูก จุดที่ใกล้ขอบช่วงปกติที่สุดที่ควรลองสังเกตคือ';
   }
-  if(advAc.length && d.out_of_distribution && d.out_of_distribution.flag)
-    lead = 'ช่วงปกติที่ใช้เทียบมาจากกลุ่มนักศึกษาในชุดข้อมูล ท่าวิ่งในคลิปนี้อยู่นอกขอบเขตนั้น คำแนะนำด้านล่างจึงควรใช้อ้างอิงอย่างระมัดระวัง';
   /* แนบงานวิจัยไว้ใต้คำแนะนำแต่ละข้อโดยตรง — เดิมเป็นเลขยกกำลัง [1] แล้วต้องไปไล่หาในรายการ
      References ท้ายการ์ด อ่านทีละข้อไม่รู้ว่าอ้างจากงานไหน (และรายการท้ายการ์ดก็ซ้ำกับตัวคำแนะนำ) */
   $('advList').innerHTML = (lead ? '<p class="adv-lead">' + lead + '</p>' : '') + advAc.map(function(a){
