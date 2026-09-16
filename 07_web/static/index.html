@@ -156,7 +156,9 @@ details.guide-box summary:focus-visible{outline:2px solid var(--red);outline-off
 /* ============================ cards ============================ */
 .cols{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;margin-top:16px}
 .lower{display:flex;flex-direction:column;gap:16px;margin-top:16px}
-.cols2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:16px;align-items:stretch}
+/* align-items:start เพื่อให้แต่ละการ์ดสูงเท่าเนื้อหาจริง — คลิปที่ไม่มีคำแนะนำให้แก้ (ทุกมุมอยู่ในช่วงปกติ)
+   การ์ดคำแนะนำจะเหลือข้อความบรรทัดเดียว ถ้าใช้ stretch จะถูกยืดสูงเท่ากล่องสรุปแล้วเหลือที่ว่างโล่งๆ */
+.cols2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:16px;align-items:start}
 .kpis{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-bottom:14px}
 .kpi{border:1px solid var(--line);border-radius:12px;padding:10px 14px;background:var(--bg)}
 .kpi .v{font-family:"Bai Jamjuree","Anuphan",sans-serif;font-weight:700;font-size:24px;line-height:1.35;font-variant-numeric:tabular-nums}

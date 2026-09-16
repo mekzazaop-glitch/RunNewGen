@@ -90,6 +90,10 @@ def clean_leftover_uploads():
     process ถูก kill กลางคัน (เคยเกิดจริงตอนโดน OOM) ไฟล์คลิปหลักร้อย MB จะค้างกินดิสก์ถาวร"""
     removed = 0
     for name in os.listdir(UPLOAD_DIR):
+        # ห้ามลบ .gitkeep (ไฟล์ว่างที่ git ใช้รักษาโฟลเดอร์ uploads/ ไว้ใน repo) และ dotfile อื่นๆ —
+        # เคยลบจริงตอนรันทดสอบในเครื่อง ทำให้โฟลเดอร์หลุดจาก git ไปเฉยๆ
+        if name.startswith("."):
+            continue
         try:
             os.remove(os.path.join(UPLOAD_DIR, name))
             removed += 1
